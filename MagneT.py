@@ -200,7 +200,7 @@ class MagneT(object):
 
     def OmegaC(self, B = None, T = None, mu = None, Gam = None, Xi = None, Nmax = None, Bs = 2, GL = 1, alpha = 0):
         """
-        Numeric function for calculating the grand potential, 
+        Numeric calculation of the thermodynamic grand potential, 
         Bs is the field for spin splitting (if Bs = 0 no spin splitting )
         """
         if B: self._B = B
@@ -336,6 +336,9 @@ class MagneT(object):
         return  self._MagC
 
     def MagCmu(self, Om, B = None, mu = None, ns = None):
+        """
+        Calculate Magnetization from Grand Potential Omega for a constant chemical potential
+        """
         if not self_Om : self._Om = Om
         OmC = savgol_filter(Om,21,3)
         self._MagCmu = -diff(OmC+mu*ns)/diff(B)
