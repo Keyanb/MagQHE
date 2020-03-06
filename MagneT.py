@@ -28,8 +28,8 @@ class MagneT(object):
 #        ns = 2.75e15*0.99
         self._mu = self._ns*pi*k.hbar**2/self._m
         self._EF = self._ns*pi*k.hbar**2/self._m
-        self._E = linspace(0,2*self._mu,1002)
-        self._Gamm = kwarg['Gamma'] if 'Gamma' in kwarg else self._EF/15
+        self._E = linspace(0,2*self._mu,1002)[:, newaxis]
+        self._Gam = kwarg['Gamma'] if 'Gamma' in kwarg else self._EF/15
         self._s_default = 0
         self._B = kwarg['Bfield'] if 'Bfield' in kwarg else linspace(0.25,8,5000)
 
@@ -69,17 +69,21 @@ class MagneT(object):
         """       
         B is a vector of M elements
         E is a vector of L elements
-        Return: the density of state for LL with Gaussian Broadening without spin splitting
+        Return: the density of state for LL with Gaussian Broadening without 
+        spin splitting (M by L matrix)
         """
         if B: self._B = B
+        if isinstance(E,(np.ndarray, float,int)) : self._E = E
         if Gam: self._Gam = Gam
-        if m: self._m = m
+        # if m: self._m = m
         if Nmax: self._N = Nmax
-        wc = k.e*B/self._m     # M elements
-        l = sqrt(k.hbar/(k.e*B))  # M elements
-        n = arange(self._N+1)[:, newaxis, newaxis] # N,1 elements (N=Nmax+1)
+        wc = k.e*self._B/self._m     # M elements
+        l = sqrt(k.hbar/(k.e*self._B))  # M elements
+        # n = arange(self._N+1)[:, newaxis, newaxis] # N,1 elements (N=Nmax+1)
+        n = arange(self._N+1)[:, newaxis] # N,1 elements (N=Nmax+1)
         En = k.hbar*wc*(n+1./2) # NxM elements)
-        return 1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) * sum(exp(-(E-En)**2/(2*self._Gam**2)), axis=0)
+        return 1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) * sum(exp(-(self._E-En)**2
+                                                                 /(2*self._Gam**2)), axis=0)
 
     def gElorentzian(self,B = None, E = None, Gam = None, m = None, Nmax = None):
         """
@@ -88,12 +92,13 @@ class MagneT(object):
         E is a vector of L elements
         """
 #        if E: self._E = E
+        if isinstance(E,(np.ndarray, float,int)) : self._E = E
         if B: self._B = B
         if Gam: self._Gam = Gam
         if m: self._m = m
         if Nmax: self._N = Nmax
-        wc = k.e*B/self._m     # M elements
-        l = sqrt(k.hbar/(k.e*B))  # M elements
+        wc = k.e*self._B/self._m     # M elements
+        l = sqrt(k.hbar/(k.e*self._B))  # M elements
         n = arange(self._N+1)[:, newaxis] # N,1 elements (N=Nmax+1)
         En = k.hbar*wc*(n+1./2) # NxM elements)
         return 1./(pi*l**2) * sum(self._Gam/((self._E-En)**2 + self._Gam**2), axis=0)
@@ -106,34 +111,38 @@ class MagneT(object):
         """
         if B: self._B = B
         if Gam: self._Gam = Gam
-        if m: self._m = m
+        # if m: self._m = m
         if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi
-        Bp = B*cos(alpha)
-        Bt = B
-        gp = 0.44+0.9*(1-1/(1+exp((B-Bs)/1)))
-        gn = 0.44+0.5*(1-1/(1+exp((B-Bs)/0.6)))
+        Bp = self._B*cos(alpha)
+        Bt = self._B
+        gp = 0.44+0.9*(1-1/(1+exp((self._B-Bs)/1)))
+        gn = 0.44+0.5*(1-1/(1+exp((self._B-Bs)/0.6)))
         mub = k.e*k.hbar/(2*self._m)
         wc = k.e*Bp/self._m     # M elements
         ws = k.e*Bt/self._m     # M elements
         Dn = gn*mub*Bt/2
         Dp = gp*mub*Bt/2
         p=0
-        self._Gam = self._Gam*B**self._p
+        self._Gam = self._Gam*self._B**self._p
         #    ep = 0.05e-23*B**3
         ep = 0
         l = sqrt(k.hbar/(k.e*Bp))  # M elements
         #    n = arange(Nmax+1)[:, newaxis, newaxis, newaxis] # N,1 elements (N=Nmax+1)
-        n = arange(self._Nmax+1)[:, newaxis, newaxis] 
+        n = arange(self._N+1)[:, newaxis, newaxis] 
         #    nS = arange((Nmax+1)*2)[:, newaxis] # N,1 elements (N=Nmax+1)
         En = k.hbar*wc*(n+1./2)
         EnP = k.hbar*wc*(n+1./2)+Dp+ep
         EnN = k.hbar*wc*(n+1./2)-Dn
         if GL == 1:
-            dos = Xi*m/(pi*k.hbar**2)+(1-Xi)/2* ((1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) * sum(exp(-(E-EnP)**2/(2*self._Gam**2)), axis=0))+ (1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) *sum(exp(-(E-EnN)**2/(2*self._Gam**2)), axis=0)))
+            dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)/2* ((1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) 
+                                                  * sum(exp(-(self._E-EnP)**2/(2*self._Gam**2)),
+                                                        axis=0))+ (1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) 
+                                                                   *sum(exp(-(self._E-EnN)**2/(2*self._Gam**2)), axis=0)))
 #            print(Xi)
         else:
-            dos = Xi*m/(pi*k.hbar**2)+(1-Xi)*1./(pi*l**2)/2 * (sum(self._Gam/((E-EnP)**2 + self._Gam**2), axis=0) +sum(Gam/((E-EnN)**2 + Gam**2), axis=0))
+            dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)*1./(pi*l**2)/2 *(sum(self._Gam/((self._E-EnP)**2 + self._Gam**2), axis=0) +
+             sum(Gam/((self._E-EnN)**2 + self._Gam**2), axis=0))
 #            print('L')   
         return dos
     
