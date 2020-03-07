@@ -263,10 +263,10 @@ class MagneT(object):
         hwc = k.hbar*wc    
         smu = 2*pi*n*mu/(hwc) + phi*2*pi*n #2nd term is a Berry phase 
         skt = 2*pi**2*n*k.k*T/(hwc)
-        Gam = Gam*B**p
-        I4 =  -(hwc)**2/(4*pi**2*n**2*k.k*T) + hwc/(2*n)*cos(smu)/sinh(2*pi**2*n*k.k*T/hwc)
-        DI4 =  1/B*(-hwc**2/(2*pi**2*n**2*k.k*T)+pi*mu*sin(smu)/sinh(skt)+cos(smu)/sinh(skt)*(hwc/(2*n)+pi**2*k.k*T*1/tanh(skt)))   
-        return -2*m*k.k*T/(pi*k.hbar**2)*(1-Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)**2/(hwc)**2)*(DI4+(1-p)*(2*pi*n*Gam/hwc)**2*I4/B), axis=0)
+        Gam = self._Gam*B**p
+        I4 =  -(hwc)**2/(4*pi**2*n**2*k.k*self._T) + hwc/(2*n)*cos(smu)/sinh(2*pi**2*n*k.k*self._T/hwc)
+        DI4 =  1/self._B*(-hwc**2/(2*pi**2*n**2*k.k*self._T)+pi*self._mu*sin(smu)/sinh(skt)+cos(smu)/sinh(skt)*(hwc/(2*n)+pi**2*k.k*self._T*1/tanh(skt)))   
+        return -2*self._m*k.k*self._T/(pi*k.hbar**2)*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)**2/(hwc)**2)*(DI4+(1-self._p)*(2*pi*n*Gam/hwc)**2*I4/self._B), axis=0)
 
     def MagL(self, B = None, ns = None, mu = None, T = None, Gam = None, Xi = None, p = None, Nmax = None, s = None, phi = 0):
         """
@@ -281,19 +281,20 @@ class MagneT(object):
         if ns: self._ns = ns
         if p: self._p = p
         if self._s_default: self._s_default = s
-        wc = k.e*B/m
+        wc = k.e*B/self._m
         n = arange(1,Nmax+1)[:, newaxis] # N,1 elements (N=Nmax+1)
         hwc = k.hbar*wc    
-        smu = 2*pi*n*mu/(hwc) + phi*2*pi*n #2nd term is a Berry phase 
-        skt = 2*pi**2*n*k.k*T/(hwc)
-        Gam = Gam*B**p
-        I4 =  -(hwc)**2/(4*pi**2*n**2*k.k*T) + hwc/(2*n)*cos(smu)/sinh(2*pi**2*n*k.k*T/hwc)
-        DI4 =  1/B*(-hwc**2/(2*pi**2*n**2*k.k*T)+pi*mu*sin(smu)/sinh(skt)+cos(smu)/sinh(skt)*(hwc/(2*n)+pi**2*k.k*T*1/tanh(skt)))   
-        return -2*m*k.k*T/(pi*k.hbar**2)*(1-Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)/(hwc))*(DI4+(1-p)*(2*pi*n*Gam/hwc)*I4/B), axis=0)
+        smu = 2*pi*n*self._mu/(hwc) + phi*2*pi*n #2nd term is a Berry phase 
+        skt = 2*pi**2*n*k.k*self._T/(hwc)
+        Gam = self._Gam*B**p
+        I4 =  -(hwc)**2/(4*pi**2*n**2*k.k*self._T) + hwc/(2*n)*cos(smu)/sinh(2*pi**2*n*k.k*self._T/hwc)
+        DI4 =  1/self._B*(-hwc**2/(2*pi**2*n**2*k.k*self._T)+pi*self._mu*sin(smu)/sinh(skt)+cos(smu)/sinh(skt)*(hwc/(2*n)+pi**2*k.k*self._T*1/tanh(skt)))   
+        return -2*m*k.k*self._T/(pi*k.hbar**2)*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)/(hwc))*(DI4+(1-self._p)*(2*pi*n*Gam/hwc)*I4/self._B), axis=0)
 
     def MagC(self,  Om = None, B = None):
         """
-        Calculate Magnetization from Grand Potential Omega
+        Calculate Magnetization from Grand Potential Omega. 
+        Omega needs to be calculated before hands with one of the class function.
         """
         if Om : self._Om = Om
         OmC = sig.savgol_filter(self._Om,21,3)
