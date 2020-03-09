@@ -13,19 +13,13 @@ class MagneT(object):
     Set of function to calculate the magnetisation in QHE with and without spin splitting.
     """
     def __init__(self,**kwarg):
-#        self._type = kwargs['type'] if 'type' in kwargs else 'kitten'
         self._Xi = kwarg['Xi'] if 'Xi' in kwarg else 0.2
-#        Xi_default = .2
         m_default = 0.067*k.m_e
         self._m = kwarg['mass'] if 'mass' in kwarg else 0.067*k.m_e
         self._T = kwarg['Temp'] if 'Temp' in kwarg else 15e-3
         self._p = kwarg['power'] if 'power' in kwarg else 0
         self._N = kwarg['N-LL'] if 'N-LL' in kwarg else 50
         self._ns = kwarg['density'] if 'density' in kwarg else 2.75e15*0.99
-#        T_default = 15e-3
-#        p_default = 0
-#        Nmax_default = 50
-#        ns = 2.75e15*0.99
         self._mu = self._ns*pi*k.hbar**2/self._m
         self._EF = self._ns*pi*k.hbar**2/self._m
         self._E = linspace(0,2*self._mu,1002)[:, newaxis]
@@ -63,7 +57,7 @@ class MagneT(object):
                     else:
                         bet[n,p] = 0           
         return bet
-#    return 1/(1+bigfloat.exp((E-mu)/(k.k*T)),bigfloat.precision(100))
+
 
     def gEgaussian(self,B = None, E = None, Gam = None, Nmax = None):
         """       
@@ -85,17 +79,16 @@ class MagneT(object):
         return 1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) * sum(exp(-(self._E-En)**2
                                                                  /(2*self._Gam**2)), axis=0)
 
-    def gElorentzian(self,B = None, E = None, Gam = None, m = None, Nmax = None):
+    def gElorentzian(self,B = None, E = None, Gam = None, Nmax = None):
         """
         return: the density of state for LL with Lorenzian Broadening without spin splitting
         B is a vector of M elements
         E is a vector of L elements
         """
-#        if E: self._E = E
+
         if isinstance(E,(np.ndarray, float,int)) : self._E = E
         if B: self._B = B
         if Gam: self._Gam = Gam
-        if m: self._m = m
         if Nmax: self._N = Nmax
         wc = k.e*self._B/self._m     # M elements
         l = sqrt(k.hbar/(k.e*self._B))  # M elements
@@ -103,7 +96,7 @@ class MagneT(object):
         En = k.hbar*wc*(n+1./2) # NxM elements)
         return 1./(pi*l**2) * sum(self._Gam/((self._E-En)**2 + self._Gam**2), axis=0)
     
-    def gESS(self,B= None, E = None,  Gam = None , Xi = None, Nmax = None, Bs = 2, alpha = 0, GL = 0):     
+    def gESS(self,B = None, E = None,  Gam = None , Xi = None, Nmax = None, Bs = 2, alpha = 0, GL = 0):     
         """
         return: the density of state for LL with spin splitted with Gaussian or Lorentzian Broadening
         B is a vector of M elements
@@ -111,7 +104,7 @@ class MagneT(object):
         """
         if B: self._B = B
         if Gam: self._Gam = Gam
-        # if m: self._m = m
+  
         if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi
         Bp = self._B*cos(alpha)
@@ -139,16 +132,15 @@ class MagneT(object):
                                                   * sum(exp(-(self._E-EnP)**2/(2*self._Gam**2)),
                                                         axis=0))+ (1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) 
                                                                    *sum(exp(-(self._E-EnN)**2/(2*self._Gam**2)), axis=0)))
-#            print(Xi)
+
         else:
             dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)*1./(pi*l**2)/2 *(sum(self._Gam/((self._E-EnP)**2 + self._Gam**2), axis=0) +
-             sum(Gam/((self._E-EnN)**2 + self._Gam**2), axis=0))
-#            print('L')   
+             sum(Gam/((self._E-EnN)**2 + self._Gam**2), axis=0))  
         return dos
     
     
 
-    def Dbe(self,B = None, E = None, Gam = None, Xi = None, m = None, Nmax = None, gE=gEgaussian):
+    def Dbe(self,B = None, E = None, Gam = None, Xi = None, Nmax = None, gE=gEgaussian):
         """
         returns the density of state (Gaussian or Lorentzian with
         a constant background tuned by Xi
@@ -157,7 +149,6 @@ class MagneT(object):
         """
         if B: self._B = B
         if Gam: self._Gam = Gam
-        if m: self._m = m
         if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi
         single = False
@@ -179,7 +170,7 @@ class MagneT(object):
         #return where(ret==-inf, a, ret) # fix for -inf
         return ret
 
-    def Omega(self,B = None, EF = None, T = None, Gam = None, Xi = None, m = None, Nmax = None, gE=gEgaussian):
+    def Omega(self,B = None, EF = None, T = None, Gam = None, Xi = None,  Nmax = None, gE=gEgaussian):
         """
         return: calculation of the thermodynamic grand potential  
         B is a vector
@@ -188,7 +179,6 @@ class MagneT(object):
         if B: self._B = B
         if EF: self._EF = EF
         if Gam: self._Gam = Gam
-        if m: self._m = m
         if T: self._T = T
         if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi
@@ -206,7 +196,6 @@ class MagneT(object):
         if B: self._B = B
         if mu: self._mu = mu
         if Gam: self._Gam = Gam
-        if m: self._m = m
         if T: self._T = T
         if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi
@@ -241,12 +230,10 @@ class MagneT(object):
         if B: self._B = B
         if mu: self._mu = mu
         if Gam: self._Gam = Gam
-        if m: self._m = m
         if T: self._T = T
         if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi
         E = linspace(0,2*mu,1002)[:, newaxis]
-        #    Z = gEgaussianS(B,E,Gam)[0]*(mu[newaxis]-E)/(k.k*T)
         Z = gESS(B,E,Gam, Xi)*(mu-E)/(k.k*T)
         S = np.zeros((shape(B)[0]))
         for p in range(shape(B)[0]):
@@ -255,18 +242,11 @@ class MagneT(object):
                     Z[n,p] = 0
             S[p] = sum(Z[:,p])
         return -S*(max(E)-min(E))/shape(E)[0]*k.k*T
-    # B = np.linspace(1,20,1000)
-    # iB = linspace(1./20, 1./1, 1000)
-    # ee=linspace(0, EF_default*10,1000)
-    # plot(B, gEgaussian(B, EF_default*10, Gam_default)
-    # plot(1/B, gEgaussian(B, EF_default*10, Gam_default, Nmax=100))
-    # plot(iB, gEgaussian(1/iB, EF_default*10, Gam_default, Nmax=100))
-    # plot(iB, Dbe(1/iB, EF_default*1.1, Gam_default/1, Nmax=100, gE=gEgaussian))
+   
 
-    def Om2(self, B = None, mu = None, T = None, Gam = None, Xi = None, m = None, Nmax = None):
+    def Om2(self, B = None, mu = None, T = None, Gam = None, Xi = None,  Nmax = None):
         if mu: self._mu = mu
         if Gam: self._Gam = Gam
-        if m: self._m = m
         if T: self._T = T
         if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi
@@ -277,7 +257,7 @@ class MagneT(object):
         I4 = -(hwc)**2/(4*pi**2*n**2*k.k*T) + hwc/(2*n)*cos(2*pi*n*mu/hwc)/sinh(2*pi**2*n*k.k*T/hwc)
         return m*k.k*T/(pi*k.hbar**2)*(I3+2*(1-Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)**2/(hwc)**2)*I4, axis=0))
 
-    def Mag( self, B = None, ns = None, mu = None, T = None, Gam = None, Xi = None, m = None, p = None, Nmax = None, s = None, phi = 0):
+    def Mag( self, B = None, ns = None, mu = None, T = None, Gam = None, Xi = None,  p = None, Nmax = None, s = None, phi = 0):
         """
         Return: the Magnetisation in QHE with Gaussian broadening without spin splitting
         calculated by the analytical expression based on the Fourier decomposition
@@ -285,7 +265,6 @@ class MagneT(object):
         if B: self._B = B
         if mu: self._mu = mu
         if Gam: self._Gam = Gam
-        if m: self._m = m
         if T: self._T = T
         if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi
@@ -302,7 +281,7 @@ class MagneT(object):
         DI4 =  1/B*(-hwc**2/(2*pi**2*n**2*k.k*T)+pi*mu*sin(smu)/sinh(skt)+cos(smu)/sinh(skt)*(hwc/(2*n)+pi**2*k.k*T*1/tanh(skt)))   
         return -2*m*k.k*T/(pi*k.hbar**2)*(1-Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)**2/(hwc)**2)*(DI4+(1-p)*(2*pi*n*Gam/hwc)**2*I4/B), axis=0)
 
-    def MagL(self, B = None, ns = None, mu = None, T = None, Gam = None, Xi = None, m = None, p = None, Nmax = None, s = None, phi = 0):
+    def MagL(self, B = None, ns = None, mu = None, T = None, Gam = None, Xi = None, p = None, Nmax = None, s = None, phi = 0):
         """
         Return: the Magnetisation in QHE with Lorentzian broadening without spin splitting
         calculated by the analytical expression based on the Fourier decomposition
@@ -310,7 +289,6 @@ class MagneT(object):
         if B: self._B = B
         if mu: self._mu = mu
         if Gam: self._Gam = Gam
-        if m: self._m = m
         if T: self._T = T
         if Nmax: self._N = Nmax
         if ns: self._ns = ns
@@ -344,13 +322,12 @@ class MagneT(object):
         self._MagCmu = -diff(OmC+mu*ns)/diff(B)
         return self._MagCmu
     
-    def nsb(self, B = None, mu = None, T = None, Gam = None, Xi = None, m = None, p = None, Nmax = None, s = None, phi = 0):
+    def nsb(self, B = None, mu = None, T = None, Gam = None, Xi = None, p = None, Nmax = None, s = None, phi = 0):
         """
         Calculates the density of state analytically (for Gaussian LL )
         """
         if mu: self._mu = mu
         if Gam: self._Gam = Gam
-        if m: self._m = m
         if T: self._T = T
         if Nmax: self._N = Nmax
         if p: self._p = p
@@ -365,14 +342,13 @@ class MagneT(object):
         I2 = pi*k.k*T*sin(smu)/sinh(2*pi**2*n*k.k*T/hwc)
         return m/(pi*k.hbar**2)*(I1+2*(1-Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)**2/(hwc)**2)*I2, axis=0))
 
-    def nsbL(self, B = None, mu = None, T = None, Gam = None, Xi = None, m = None,
+    def nsbL(self, B = None, mu = None, T = None, Gam = None, Xi = None,
              p = None, Nmax = None, s = None, phi = 0):
         """
         Calculates the density of state analytically (for Lorenzian LL )
         """
         if mu: self._mu = mu
         if Gam: self._Gam = Gam
-        if m: self._m = m
         if T: self._T = T
         if Nmax: self._N = Nmax
         if self._s_default: self._s_default = s
@@ -454,5 +430,11 @@ class MagneT(object):
 def main():
         
     if __name__ == '__main__': main()        # -*- coding: utf-8 -*-
-
+ # B = np.linspace(1,20,1000)
+    # iB = linspace(1./20, 1./1, 1000)
+    # ee=linspace(0, EF_default*10,1000)
+    # plot(B, gEgaussian(B, EF_default*10, Gam_default)
+    # plot(1/B, gEgaussian(B, EF_default*10, Gam_default, Nmax=100))
+    # plot(iB, gEgaussian(1/iB, EF_default*10, Gam_default, Nmax=100))
+    # plot(iB, Dbe(1/iB, EF_default*1.1, Gam_default/1, Nmax=100, gE=gEgaussian))
       
