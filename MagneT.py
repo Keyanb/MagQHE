@@ -4,6 +4,7 @@ from __future__ import division
 from pylab import *
 from numpy import *
 import scipy.integrate as integrate
+import scipy.signal as sig
 from scipy import constants as k
 #import bigfloat
 
@@ -13,8 +14,8 @@ class MagneT(object):
     Set of function to calculate the magnetisation in QHE with and without spin splitting.
     """
     def __init__(self,**kwarg):
+
         self._Xi = kwarg['Xi'] if 'Xi' in kwarg else 0.2
-        m_default = 0.067*k.m_e
         self._m = kwarg['mass'] if 'mass' in kwarg else 0.067*k.m_e
         self._T = kwarg['Temp'] if 'Temp' in kwarg else 15e-3
         self._p = kwarg['power'] if 'power' in kwarg else 0
@@ -69,12 +70,11 @@ class MagneT(object):
         if B: self._B = B
         if isinstance(E,(np.ndarray, float,int)) : self._E = E
         if Gam: self._Gam = Gam
-        # if m: self._m = m
         if Nmax: self._N = Nmax
         wc = k.e*self._B/self._m     # M elements
         l = sqrt(k.hbar/(k.e*self._B))  # M elements
         # n = arange(self._N+1)[:, newaxis, newaxis] # N,1 elements (N=Nmax+1)
-        n = arange(self._N+1)[:, newaxis] # N,1 elements (N=Nmax+1)
+        n = arange(self._N+1)[:, newaxis, newaxis] # N,1 elements (N=Nmax+1)
         En = k.hbar*wc*(n+1./2) # NxM elements)
         return 1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) * sum(exp(-(self._E-En)**2
                                                                  /(2*self._Gam**2)), axis=0)
@@ -92,7 +92,7 @@ class MagneT(object):
         if Nmax: self._N = Nmax
         wc = k.e*self._B/self._m     # M elements
         l = sqrt(k.hbar/(k.e*self._B))  # M elements
-        n = arange(self._N+1)[:, newaxis] # N,1 elements (N=Nmax+1)
+        n = arange(self._N+1)[:, newaxis, newaxis] # N,1 elements (N=Nmax+1)
         En = k.hbar*wc*(n+1./2) # NxM elements)
         return 1./(pi*l**2) * sum(self._Gam/((self._E-En)**2 + self._Gam**2), axis=0)
     
@@ -104,7 +104,6 @@ class MagneT(object):
         """
         if B: self._B = B
         if Gam: self._Gam = Gam
-  
         if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi
         Bp = self._B*cos(alpha)
@@ -132,10 +131,9 @@ class MagneT(object):
                                                   * sum(exp(-(self._E-EnP)**2/(2*self._Gam**2)),
                                                         axis=0))+ (1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) 
                                                                    *sum(exp(-(self._E-EnN)**2/(2*self._Gam**2)), axis=0)))
-
         else:
             dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)*1./(pi*l**2)/2 *(sum(self._Gam/((self._E-EnP)**2 + self._Gam**2), axis=0) +
-             sum(Gam/((self._E-EnN)**2 + self._Gam**2), axis=0))  
+             sum(self._Gam/((self._E-EnN)**2 + self._Gam**2), axis=0))
         return dos
     
     
@@ -154,8 +152,8 @@ class MagneT(object):
         single = False
         if not isinstance(B, (list, ndarray)) and not isinstance(E, (list, ndarray)):
             single = True
-            Ggi = gE(B, E, Gam, Nmax)
-            ret = Xi*m/(pi*k.hbar**2)+(1-Xi)*2*k.e*B/(pi*k.h)*Ggi
+            Ggi = self.gE()
+            ret = self._Xi*m/(pi*k.hbar**2)+(1-self._Xi)*2*k.e*B/(pi*k.h)*Ggi
             if single:
                 return ret[0]
             return ret
@@ -165,14 +163,13 @@ class MagneT(object):
         Fermi-Dirac function
         """
         if EF: self._EF = EF
-        a = (E-EF)/(k.k*T)
+        a = (self._E-self._EF)/(k.k*self._T)
         ret = log( 1. - 1./(1+exp(a)) )
-        #return where(ret==-inf, a, ret) # fix for -inf
         return ret
 
     def Omega(self,B = None, EF = None, T = None, Gam = None, Xi = None,  Nmax = None, gE=gEgaussian):
         """
-        return: calculation of the thermodynamic grand potential  
+        return: numerical calculation of the thermodynamic grand potential without spin splitting
         B is a vector
         T is the temperature (single value)
         """
@@ -183,10 +180,26 @@ class MagneT(object):
         if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi
         integ_result = empty_like(B)
-        integrand = lambda E: Dbe(B, E, Gam, Xi, m, Nmax, gE)*fermi_weight(E, EF, T)
+        integrand = lambda E: self.Dbe(gE = gE)*self.fermi_weight()
         for i,b in enumerate(B):
             integ_result[i], error = integrate.quad(integrand, 0, EF*10)
         return k.k*T * integ_result 
+    
+    def Om2(self, B = None, mu = None, T = None, Gam = None, Xi = None, m = None, Nmax = None):
+        """
+        Return: analytical calculation of the Grand thermodynamic potential based on Fourrier decomposition without spin splitting
+        """
+        if mu: self._mu = mu
+        if Gam: self._Gam = Gam
+        if T: self._T = T
+        if Nmax: self._N = Nmax
+        if Xi: self._Xi = Xi
+        wc = k.e*B/m
+        hwc = k.hbar*wc
+        n = arange(1,Nmax+1)[:, newaxis] # N,1 elements (N=Nmax+1)
+        I3 = -(self._mu**2/(2*k.k*self._T)+pi**2*k.k*self._T/6)
+        I4 = -(hwc)**2/(4*pi**2*n**2*k.k*self._T) + hwc/(2*n)*cos(2*pi*n*mu/hwc)/sinh(2*pi**2*n*k.k*self._T/hwc)
+        return m*k.k*self._T/(pi*k.hbar**2)*(I3+2*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*self._Gam)**2/(hwc)**2)*I4, axis=0))
 
     def OmegaC(self, B = None, T = None, mu = None, Gam = None, Xi = None, Nmax = None, Bs = 2, GL = 1, alpha = 0):
         """
@@ -199,68 +212,38 @@ class MagneT(object):
         if T: self._T = T
         if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi
-        if shape(mu) == ():
-            E = linspace(0,2*mu,1002)[:, newaxis]
+        if shape(self._mu) == ():
+            E = linspace(0,2*self._mu,1002)[:, newaxis]
         else:
-            E = linspace(0,2*mu[0],1002)[:, newaxis]
-        bet = (mu-E)/(k.k*T)
-        if shape(mu) == ():
+            E = linspace(0,2*self._mu[0],1002)[:, newaxis]
+        bet = (self._mu-E)/(k.k*self._T)
+        if shape(self._mu) == ():
             for n in range(shape(E)[0]):
                 if abs(bet[n]) < 50:
                     bet[n] = log(1+exp(bet[n]))
                 elif (bet[n]) < -50:
                     bet[n] = 0
-            else:
-                for p in range(shape(mu)[0]):
-                    for n in range(shape(E)[0]):
-                        if abs(bet[n,p]) < 50:
-                            bet[n,p] = log(1+exp(bet[n,p]))
-                        elif (bet[n,p]) < -50:
-                            bet[n,p] = 0
+        else:
+            for p in range(shape(self._mu)[0]):
+                for n in range(shape(E)[0]):
+                    if abs(bet[n,p]) < 50:
+                        bet[n,p] = log(1+exp(bet[n,p]))
+                    elif (bet[n,p]) < -50:
+                        bet[n,p] = 0
                     
         if Bs == 0:
-            Z = gEgaussian(B,E,Gam)*bet
+            Z = self.gEgaussian(E = E)*bet
         else:
-            Z = gESS(B,E,Bs,Gam,Xi, alpha , Nmax, GL)*bet
+            Z = self.gESS(E = E, Bs = Bs, alpha = alpha , GL = GL)*bet
         S = sum(Z, axis = 0)
-        self._Om = -S*(max(E)-min(E))/shape(E)[0]*k.k*T
+        self._Om = -S*(max(E)-min(E))/shape(E)[0]*k.k*self._T
         return self._Om 
-
-    def OmegaCS(self, B = None, T = None ,mu = None, Gam = None, Nmax = None, Xi = None, Bs = 2):
-        if B: self._B = B
-        if mu: self._mu = mu
-        if Gam: self._Gam = Gam
-        if T: self._T = T
-        if Nmax: self._N = Nmax
-        if Xi: self._Xi = Xi
-        E = linspace(0,2*mu,1002)[:, newaxis]
-        Z = gESS(B,E,Gam, Xi)*(mu-E)/(k.k*T)
-        S = np.zeros((shape(B)[0]))
-        for p in range(shape(B)[0]):
-            for n in range(shape(E)[0]):
-                if Z[n,p] < 0:
-                    Z[n,p] = 0
-            S[p] = sum(Z[:,p])
-        return -S*(max(E)-min(E))/shape(E)[0]*k.k*T
    
-
-    def Om2(self, B = None, mu = None, T = None, Gam = None, Xi = None,  Nmax = None):
-        if mu: self._mu = mu
-        if Gam: self._Gam = Gam
-        if T: self._T = T
-        if Nmax: self._N = Nmax
-        if Xi: self._Xi = Xi
-        wc = k.e*B/m
-        hwc = k.hbar*wc
-        n = arange(1,Nmax+1)[:, newaxis] # N,1 elements (N=Nmax+1)
-        I3 = -(mu**2/(2*k.k*T)+pi**2*k.k*T/6)
-        I4 = -(hwc)**2/(4*pi**2*n**2*k.k*T) + hwc/(2*n)*cos(2*pi*n*mu/hwc)/sinh(2*pi**2*n*k.k*T/hwc)
-        return m*k.k*T/(pi*k.hbar**2)*(I3+2*(1-Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)**2/(hwc)**2)*I4, axis=0))
 
     def Mag( self, B = None, ns = None, mu = None, T = None, Gam = None, Xi = None,  p = None, Nmax = None, s = None, phi = 0):
         """
         Return: the Magnetisation in QHE with Gaussian broadening without spin splitting
-        calculated by the analytical expression based on the Fourier decomposition
+        calculated with the analytical expression based on the Fourier decomposition
         """
         if B: self._B = B
         if mu: self._mu = mu
@@ -271,15 +254,15 @@ class MagneT(object):
         if ns: self._ns = ns
         if p: self._p = p
         if self._s_default: self._s_default = s
-        wc = k.e*B/m
-        n = arange(1,Nmax+1)[:, newaxis] # N,1 elements (N=Nmax+1)
+        wc = k.e*self._B/self._m
+        n = arange(1,self._N+1)[:, newaxis] # N,1 elements (N=Nmax+1)
         hwc = k.hbar*wc    
-        smu = 2*pi*n*mu/(hwc) + phi*2*pi*n #2nd term is a Berry phase 
-        skt = 2*pi**2*n*k.k*T/(hwc)
-        Gam = Gam*B**p
-        I4 =  -(hwc)**2/(4*pi**2*n**2*k.k*T) + hwc/(2*n)*cos(smu)/sinh(2*pi**2*n*k.k*T/hwc)
-        DI4 =  1/B*(-hwc**2/(2*pi**2*n**2*k.k*T)+pi*mu*sin(smu)/sinh(skt)+cos(smu)/sinh(skt)*(hwc/(2*n)+pi**2*k.k*T*1/tanh(skt)))   
-        return -2*m*k.k*T/(pi*k.hbar**2)*(1-Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)**2/(hwc)**2)*(DI4+(1-p)*(2*pi*n*Gam/hwc)**2*I4/B), axis=0)
+        smu = 2*pi*n*self._mu/(hwc) + phi*2*pi*n #2nd term is a Berry phase 
+        skt = 2*pi**2*n*k.k*self._T/(hwc)
+        Gam = self._Gam*self._B**self._p
+        I4 =  -(hwc)**2/(4*pi**2*n**2*k.k*self._T) + hwc/(2*n)*cos(smu)/sinh(2*pi**2*n*k.k*self._T/hwc)
+        DI4 =  1/self._B*(-hwc**2/(2*pi**2*n**2*k.k*self._T)+pi*self._mu*sin(smu)/sinh(skt)+cos(smu)/sinh(skt)*(hwc/(2*n)+pi**2*k.k*self._T*1/tanh(skt)))   
+        return -2*self._m*k.k*self._T/(pi*k.hbar**2)*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)**2/(hwc)**2)*(DI4+(1-self._p)*(2*pi*n*Gam/hwc)**2*I4/self._B), axis=0)
 
     def MagL(self, B = None, ns = None, mu = None, T = None, Gam = None, Xi = None, p = None, Nmax = None, s = None, phi = 0):
         """
@@ -294,32 +277,33 @@ class MagneT(object):
         if ns: self._ns = ns
         if p: self._p = p
         if self._s_default: self._s_default = s
-        wc = k.e*B/m
-        n = arange(1,Nmax+1)[:, newaxis] # N,1 elements (N=Nmax+1)
+        wc = k.e*self._B/self._m
+        n = arange(1,self._N+1)[:, newaxis] # N,1 elements (N=Nmax+1)
         hwc = k.hbar*wc    
-        smu = 2*pi*n*mu/(hwc) + phi*2*pi*n #2nd term is a Berry phase 
-        skt = 2*pi**2*n*k.k*T/(hwc)
-        Gam = Gam*B**p
-        I4 =  -(hwc)**2/(4*pi**2*n**2*k.k*T) + hwc/(2*n)*cos(smu)/sinh(2*pi**2*n*k.k*T/hwc)
-        DI4 =  1/B*(-hwc**2/(2*pi**2*n**2*k.k*T)+pi*mu*sin(smu)/sinh(skt)+cos(smu)/sinh(skt)*(hwc/(2*n)+pi**2*k.k*T*1/tanh(skt)))   
-        return -2*m*k.k*T/(pi*k.hbar**2)*(1-Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)/(hwc))*(DI4+(1-p)*(2*pi*n*Gam/hwc)*I4/B), axis=0)
+        smu = 2*pi*n*self._mu/(hwc) + phi*2*pi*n #2nd term is a Berry phase 
+        skt = 2*pi**2*n*k.k*self._T/(hwc)
+        Gam = self._Gam*self._B**self._p
+        I4 =  -(hwc)**2/(4*pi**2*n**2*k.k*self._T) + hwc/(2*n)*cos(smu)/sinh(2*pi**2*n*k.k*self._T/hwc)
+        DI4 =  1/self._B*(-hwc**2/(2*pi**2*n**2*k.k*self._T)+pi*self._mu*sin(smu)/sinh(skt)+cos(smu)/sinh(skt)*(hwc/(2*n)+pi**2*k.k*self._T*1/tanh(skt)))   
+        return -2*m*k.k*self._T/(pi*k.hbar**2)*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)/(hwc))*(DI4+(1-self._p)*(2*pi*n*Gam/hwc)*I4/self._B), axis=0)
 
-    def MagC(self,  Om, B = None):
+    def MagC(self,  Om = None, B = None):
         """
-        Calculate Magnetization from Grand Potential Omega
+        Calculate Magnetization from Grand Potential Omega. 
+        Omega needs to be calculated before hands with one of the class function.
         """
-        if not self_Om : self._Om = Om
-        OmC = savgol_filter(self.Om,21,3)
-        self._MagC = -diff(OmC)/diff(B)
+        if Om : self._Om = Om
+        OmC = sig.savgol_filter(self._Om,21,3)
+        self._MagC = -diff(OmC)/diff(self._B)
         return  self._MagC
 
-    def MagCmu(self, Om, B = None, mu = None, ns = None):
+    def MagCmu(self, Om = None, B = None, mu = None, ns = None):
         """
         Calculate Magnetization from Grand Potential Omega for a constant chemical potential
         """
-        if not self_Om : self._Om = Om
-        OmC = savgol_filter(Om,21,3)
-        self._MagCmu = -diff(OmC+mu*ns)/diff(B)
+        if Om : self._Om = Om
+        OmC = sig.savgol_filter(self._Om,21,3)
+        self._MagCmu = -diff(OmC+self._mu*self._ns)/diff(self._B)
         return self._MagCmu
     
     def nsb(self, B = None, mu = None, T = None, Gam = None, Xi = None, p = None, Nmax = None, s = None, phi = 0):
@@ -332,15 +316,15 @@ class MagneT(object):
         if Nmax: self._N = Nmax
         if p: self._p = p
         if self._s_default: self._s_default = s
-        wc = k.e*B/m
-        n = arange(1,Nmax+1)[:, newaxis, newaxis] # N,1 elements (N=Nmax+1)
+        wc = k.e*B/self._m
+        n = arange(1,self._N+1)[:, newaxis, newaxis] # N,1 elements (N=Nmax+1)
         hwc = k.hbar*wc    
-        smu = 2*pi*n*mu/(hwc) + phi*2*pi*n #2nd term is a Berry phase 
-        skt = 2*pi**2*n*k.k*T/(hwc)
-        Gam = Gam*B**p
-        I1 = mu+k.k*T*log(1+exp(-mu/(k.k*T)))
-        I2 = pi*k.k*T*sin(smu)/sinh(2*pi**2*n*k.k*T/hwc)
-        return m/(pi*k.hbar**2)*(I1+2*(1-Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)**2/(hwc)**2)*I2, axis=0))
+        smu = 2*pi*n*self._mu/(hwc) + phi*2*pi*n #2nd term is a Berry phase 
+        skt = 2*pi**2*n*k.k*self._T/(hwc)
+        Gam = self._Gam*self._B**self._p
+        I1 = self._mu+k.k*self._T*log(1+exp(-self._mu/(k.k*self._T)))
+        I2 = pi*k.k*self._T*sin(smu)/sinh(2*pi**2*n*k.k*self._T/hwc)
+        return self._m/(pi*k.hbar**2)*(I1+2*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*self._Gam)**2/(hwc)**2)*I2, axis=0))
 
     def nsbL(self, B = None, mu = None, T = None, Gam = None, Xi = None,
              p = None, Nmax = None, s = None, phi = 0):
@@ -356,11 +340,11 @@ class MagneT(object):
         n = arange(1,self._Nmax+1)[:, newaxis, newaxis] # N,1 elements (N=Nmax+1)
         hwc = k.hbar*wc    
         smu = 2*pi*n*self._mu/(hwc) + phi*2*pi*n #2nd term is a Berry phase 
-        skt = 2*pi**2*n*k.k*T/(hwc)
-        Gam = self._Gam*B**p
-        I1 = mu+k.k*T*log(1+exp(-mu/(k.k*T)))
-        I2 = pi*k.k*T*sin(smu)/sinh(2*pi**2*n*k.k*T/hwc)
-        return m/(pi*k.hbar**2)*(I1+2*(1-Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)/(hwc))*I2, axis=0))
+        skt = 2*pi**2*n*k.k*self._T/(hwc)
+        Gam = self._Gam*self._B**self._p
+        I1 = mu+k.k*self._T*log(1+exp(-self._mu/(k.k*T)))
+        I2 = pi*k.k*self._T*sin(smu)/sinh(2*pi**2*n*k.k*self._T/hwc)
+        return m/(pi*k.hbar**2)*(I1+2*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)/(hwc))*I2, axis=0))
 
     def nsbC(self, B = None, mu = None, T = None, Gam = None, Xi = None, p = None,
              Nmax = None, alpha = 0, GL = 1, Bs = 2):
@@ -369,11 +353,10 @@ class MagneT(object):
         """
         if mu: self._mu = mu
         if Gam: self._Gam = Gam
-        if m: self._m = m
         if T: self._T = T
         if Nmax: self._N = Nmax
         E = linspace(0,1.1*mu,500)[:, newaxis]
-        a = fd(E,T,mu)*gESS(B, E,Bs, Gam, Xi, alpha, Nmax, GL)
+        a = self.fd(E = E)*self.gESS(E = E,Bs = Bs, alpha = alpha, GL = GL)
         return sum(a, axis = 0)*(max(E)-min(E))/shape(E)[0]
 
     def find_nearest(self,array, value):
@@ -427,14 +410,8 @@ class MagneT(object):
 #    DI4 =  1/B*(-hwc**2/(2*pi**2*n**2*k.k*T)+pi*mu*sin(smu)/sinh(skt)+cos(smu)/sinh(skt)*(hwc/(2*n)+pi**2*k.k*T*1/tanh(skt)))   
 #    return -2*m*k.k*T/(pi*k.hbar**2)*(1-Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)**2/(hwc)**2)*(DI4+(1-p)*(2*pi*n*Gam/hwc)**2*I4/B), axis=0)
 
-def main():
+# def main():
         
-    if __name__ == '__main__': main()        # -*- coding: utf-8 -*-
- # B = np.linspace(1,20,1000)
-    # iB = linspace(1./20, 1./1, 1000)
-    # ee=linspace(0, EF_default*10,1000)
-    # plot(B, gEgaussian(B, EF_default*10, Gam_default)
-    # plot(1/B, gEgaussian(B, EF_default*10, Gam_default, Nmax=100))
-    # plot(iB, gEgaussian(1/iB, EF_default*10, Gam_default, Nmax=100))
-    # plot(iB, Dbe(1/iB, EF_default*1.1, Gam_default/1, Nmax=100, gE=gEgaussian))
+#     if __name__ == '__main__': main()        # -*- coding: utf-8 -*-
+
       
