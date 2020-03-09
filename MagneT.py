@@ -79,7 +79,7 @@ class MagneT(object):
         return 1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) * sum(exp(-(self._E-En)**2
                                                                  /(2*self._Gam**2)), axis=0)
 
-    def gElorentzian(self,B = None, E = None, Gam = None, m = None, Nmax = None):
+    def gElorentzian(self,B = None, E = None, Gam = None,  Nmax = None):
         """
         return: the density of state for LL with Lorenzian Broadening without spin splitting
         B is a vector of M elements
@@ -89,7 +89,6 @@ class MagneT(object):
         if isinstance(E,(np.ndarray, float,int)) : self._E = E
         if B: self._B = B
         if Gam: self._Gam = Gam
-        if m: self._m = m
         if Nmax: self._N = Nmax
         wc = k.e*self._B/self._m     # M elements
         l = sqrt(k.hbar/(k.e*self._B))  # M elements
@@ -102,6 +101,12 @@ class MagneT(object):
         return: the density of state for LL with spin splitted with Gaussian or Lorentzian Broadening
         B is a vector of M elements
         E is a vector of L elements
+        Gam is the Landau level broadening
+        Xi is the part of constant background density of state
+        Nmax is the number of LL to use for the calculation
+        Bs is the magnetic field of spin splitting
+        alpha is the angle of the magnetic field relative to the perpendicular axis of the 2deg (not functional yet)
+        GL determine if the density of state is Gausian (1) or Lorentzian (0)
         """
         if B: self._B = B
         if Gam: self._Gam = Gam
