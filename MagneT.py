@@ -132,11 +132,9 @@ class MagneT(object):
                                                   * sum(exp(-(self._E-EnP)**2/(2*self._Gam**2)),
                                                         axis=0))+ (1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) 
                                                                    *sum(exp(-(self._E-EnN)**2/(2*self._Gam**2)), axis=0)))
-#            print(Xi)
         else:
             dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)*1./(pi*l**2)/2 *(sum(self._Gam/((self._E-EnP)**2 + self._Gam**2), axis=0) +
              sum(self._Gam/((self._E-EnN)**2 + self._Gam**2), axis=0))
-#            print('L')   
         return dos
     
     
@@ -156,8 +154,8 @@ class MagneT(object):
         single = False
         if not isinstance(B, (list, ndarray)) and not isinstance(E, (list, ndarray)):
             single = True
-            Ggi = gE(B, E, Gam, Nmax)
-            ret = Xi*m/(pi*k.hbar**2)+(1-Xi)*2*k.e*B/(pi*k.h)*Ggi
+            Ggi = self.gE()
+            ret = self._Xi*m/(pi*k.hbar**2)+(1-self._Xi)*2*k.e*B/(pi*k.h)*Ggi
             if single:
                 return ret[0]
             return ret
@@ -167,7 +165,7 @@ class MagneT(object):
         Fermi-Dirac function
         """
         if EF: self._EF = EF
-        a = (E-EF)/(k.k*T)
+        a = (self._E-self._EF)/(k.k*self._T)
         ret = log( 1. - 1./(1+exp(a)) )
         return ret
 
@@ -184,7 +182,7 @@ class MagneT(object):
         if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi
         integ_result = empty_like(B)
-        integrand = lambda E: Dbe(B, E, Gam, Xi, m, Nmax, gE)*fermi_weight(E, EF, T)
+        integrand = lambda E: self.Dbe(gE = gE)*self.fermi_weight()
         for i,b in enumerate(B):
             integ_result[i], error = integrate.quad(integrand, 0, EF*10)
         return k.k*T * integ_result 
@@ -201,9 +199,9 @@ class MagneT(object):
         wc = k.e*B/m
         hwc = k.hbar*wc
         n = arange(1,Nmax+1)[:, newaxis] # N,1 elements (N=Nmax+1)
-        I3 = -(mu**2/(2*k.k*T)+pi**2*k.k*self._T/6)
+        I3 = -(self._mu**2/(2*k.k*self._T)+pi**2*k.k*self._T/6)
         I4 = -(hwc)**2/(4*pi**2*n**2*k.k*self._T) + hwc/(2*n)*cos(2*pi*n*mu/hwc)/sinh(2*pi**2*n*k.k*self._T/hwc)
-        return m*k.k*self._T/(pi*k.hbar**2)*(I3+2*(1-Xi)*sum((-1)**n*exp(-2*(n*pi*self._Gam)**2/(hwc)**2)*I4, axis=0))
+        return m*k.k*self._T/(pi*k.hbar**2)*(I3+2*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*self._Gam)**2/(hwc)**2)*I4, axis=0))
 
     def OmegaC(self, B = None, T = None, mu = None, Gam = None, Xi = None, Nmax = None, Bs = 2, GL = 1, alpha = 0):
         """
@@ -216,7 +214,7 @@ class MagneT(object):
         if T: self._T = T
         if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi
-        if shape(mu) == ():
+        if shape(self._mu) == ():
             E = linspace(0,2*self._mu,1002)[:, newaxis]
         else:
             E = linspace(0,2*self._mu[0],1002)[:, newaxis]
@@ -258,12 +256,12 @@ class MagneT(object):
         if ns: self._ns = ns
         if p: self._p = p
         if self._s_default: self._s_default = s
-        wc = k.e*B/m
-        n = arange(1,Nmax+1)[:, newaxis] # N,1 elements (N=Nmax+1)
+        wc = k.e*self._B/self._m
+        n = arange(1,self._N+1)[:, newaxis] # N,1 elements (N=Nmax+1)
         hwc = k.hbar*wc    
-        smu = 2*pi*n*mu/(hwc) + phi*2*pi*n #2nd term is a Berry phase 
-        skt = 2*pi**2*n*k.k*T/(hwc)
-        Gam = self._Gam*B**p
+        smu = 2*pi*n*self._mu/(hwc) + phi*2*pi*n #2nd term is a Berry phase 
+        skt = 2*pi**2*n*k.k*self._T/(hwc)
+        Gam = self._Gam*self._B**self._p
         I4 =  -(hwc)**2/(4*pi**2*n**2*k.k*self._T) + hwc/(2*n)*cos(smu)/sinh(2*pi**2*n*k.k*self._T/hwc)
         DI4 =  1/self._B*(-hwc**2/(2*pi**2*n**2*k.k*self._T)+pi*self._mu*sin(smu)/sinh(skt)+cos(smu)/sinh(skt)*(hwc/(2*n)+pi**2*k.k*self._T*1/tanh(skt)))   
         return -2*self._m*k.k*self._T/(pi*k.hbar**2)*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)**2/(hwc)**2)*(DI4+(1-self._p)*(2*pi*n*Gam/hwc)**2*I4/self._B), axis=0)
@@ -281,12 +279,12 @@ class MagneT(object):
         if ns: self._ns = ns
         if p: self._p = p
         if self._s_default: self._s_default = s
-        wc = k.e*B/self._m
-        n = arange(1,Nmax+1)[:, newaxis] # N,1 elements (N=Nmax+1)
+        wc = k.e*self._B/self._m
+        n = arange(1,self._N+1)[:, newaxis] # N,1 elements (N=Nmax+1)
         hwc = k.hbar*wc    
         smu = 2*pi*n*self._mu/(hwc) + phi*2*pi*n #2nd term is a Berry phase 
         skt = 2*pi**2*n*k.k*self._T/(hwc)
-        Gam = self._Gam*B**p
+        Gam = self._Gam*self._B**self._p
         I4 =  -(hwc)**2/(4*pi**2*n**2*k.k*self._T) + hwc/(2*n)*cos(smu)/sinh(2*pi**2*n*k.k*self._T/hwc)
         DI4 =  1/self._B*(-hwc**2/(2*pi**2*n**2*k.k*self._T)+pi*self._mu*sin(smu)/sinh(skt)+cos(smu)/sinh(skt)*(hwc/(2*n)+pi**2*k.k*self._T*1/tanh(skt)))   
         return -2*m*k.k*self._T/(pi*k.hbar**2)*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)/(hwc))*(DI4+(1-self._p)*(2*pi*n*Gam/hwc)*I4/self._B), axis=0)
@@ -320,15 +318,15 @@ class MagneT(object):
         if Nmax: self._N = Nmax
         if p: self._p = p
         if self._s_default: self._s_default = s
-        wc = k.e*B/m
-        n = arange(1,Nmax+1)[:, newaxis, newaxis] # N,1 elements (N=Nmax+1)
+        wc = k.e*B/self._m
+        n = arange(1,self._N+1)[:, newaxis, newaxis] # N,1 elements (N=Nmax+1)
         hwc = k.hbar*wc    
-        smu = 2*pi*n*mu/(hwc) + phi*2*pi*n #2nd term is a Berry phase 
-        skt = 2*pi**2*n*k.k*T/(hwc)
-        Gam = self._Gam*B**p
+        smu = 2*pi*n*self._mu/(hwc) + phi*2*pi*n #2nd term is a Berry phase 
+        skt = 2*pi**2*n*k.k*self._T/(hwc)
+        Gam = self._Gam*self._B**self._p
         I1 = self._mu+k.k*self._T*log(1+exp(-self._mu/(k.k*self._T)))
         I2 = pi*k.k*self._T*sin(smu)/sinh(2*pi**2*n*k.k*self._T/hwc)
-        return self._m/(pi*k.hbar**2)*(I1+2*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)**2/(hwc)**2)*I2, axis=0))
+        return self._m/(pi*k.hbar**2)*(I1+2*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*self._Gam)**2/(hwc)**2)*I2, axis=0))
 
     def nsbL(self, B = None, mu = None, T = None, Gam = None, Xi = None, m = None,
              p = None, Nmax = None, s = None, phi = 0):
@@ -345,8 +343,8 @@ class MagneT(object):
         n = arange(1,self._Nmax+1)[:, newaxis, newaxis] # N,1 elements (N=Nmax+1)
         hwc = k.hbar*wc    
         smu = 2*pi*n*self._mu/(hwc) + phi*2*pi*n #2nd term is a Berry phase 
-        skt = 2*pi**2*n*k.k*T/(hwc)
-        Gam = self._Gam*B**p
+        skt = 2*pi**2*n*k.k*self._T/(hwc)
+        Gam = self._Gam*self._B**self._p
         I1 = mu+k.k*self._T*log(1+exp(-self._mu/(k.k*T)))
         I2 = pi*k.k*self._T*sin(smu)/sinh(2*pi**2*n*k.k*self._T/hwc)
         return m/(pi*k.hbar**2)*(I1+2*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)/(hwc))*I2, axis=0))
