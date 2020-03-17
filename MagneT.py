@@ -79,7 +79,11 @@ class MagneT(object):
         return 1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) * sum(exp(-(self._E-En)**2
                                                                  /(2*self._Gam**2)), axis=0)
 
+<<<<<<< HEAD
     def gElorentzian(self,B = None, E = None, Gam = None,  Nmax = None):
+=======
+    def gElorentzian(self,B = None, E = None, Gam = None, Nmax = None):
+>>>>>>> 66d47f6650ee29be7de881aedbb1a44ee4dbfb8e
         """
         return: the density of state for LL with Lorenzian Broadening without spin splitting
         B is a vector of M elements
@@ -96,7 +100,7 @@ class MagneT(object):
         En = k.hbar*wc*(n+1./2) # NxM elements)
         return 1./(pi*l**2) * sum(self._Gam/((self._E-En)**2 + self._Gam**2), axis=0)
     
-    def gESS(self,B= None, E = None,  Gam = None , Xi = None, Nmax = None, Bs = 2, alpha = 0, GL = 0):     
+    def gESS(self,B = None, E = None,  Gam = None , Xi = None, Nmax = None, Bs = 2, alpha = 0, GL = 0):     
         """
         return: the density of state for LL with spin splitted with Gaussian or Lorentzian Broadening
         B is a vector of M elements
@@ -144,7 +148,7 @@ class MagneT(object):
     
     
 
-    def Dbe(self,B = None, E = None, Gam = None, Xi = None, m = None, Nmax = None, gE=gEgaussian):
+    def Dbe(self,B = None, E = None, Gam = None, Xi = None, Nmax = None, gE=gEgaussian):
         """
         returns the density of state (Gaussian or Lorentzian with
         a constant background tuned by Xi
@@ -153,7 +157,6 @@ class MagneT(object):
         """
         if B: self._B = B
         if Gam: self._Gam = Gam
-        if m: self._m = m
         if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi
         single = False
@@ -174,7 +177,7 @@ class MagneT(object):
         ret = log( 1. - 1./(1+exp(a)) )
         return ret
 
-    def Omega(self,B = None, EF = None, T = None, Gam = None, Xi = None, m = None, Nmax = None, gE=gEgaussian):
+    def Omega(self,B = None, EF = None, T = None, Gam = None, Xi = None,  Nmax = None, gE=gEgaussian):
         """
         return: numerical calculation of the thermodynamic grand potential without spin splitting
         B is a vector
@@ -333,14 +336,13 @@ class MagneT(object):
         I2 = pi*k.k*self._T*sin(smu)/sinh(2*pi**2*n*k.k*self._T/hwc)
         return self._m/(pi*k.hbar**2)*(I1+2*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*self._Gam)**2/(hwc)**2)*I2, axis=0))
 
-    def nsbL(self, B = None, mu = None, T = None, Gam = None, Xi = None, m = None,
+    def nsbL(self, B = None, mu = None, T = None, Gam = None, Xi = None,
              p = None, Nmax = None, s = None, phi = 0):
         """
         Calculates the density of state analytically (for Lorenzian LL )
         """
         if mu: self._mu = mu
         if Gam: self._Gam = Gam
-        if m: self._m = m
         if T: self._T = T
         if Nmax: self._N = Nmax
         if self._s_default: self._s_default = s
