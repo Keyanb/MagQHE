@@ -79,11 +79,9 @@ class MagneT(object):
         return 1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) * sum(exp(-(self._E-En)**2
                                                                  /(2*self._Gam**2)), axis=0)
 
-<<<<<<< HEAD
-    def gElorentzian(self,B = None, E = None, Gam = None,  Nmax = None):
-=======
+
     def gElorentzian(self,B = None, E = None, Gam = None, Nmax = None):
->>>>>>> 66d47f6650ee29be7de881aedbb1a44ee4dbfb8e
+
         """
         return: the density of state for LL with Lorenzian Broadening without spin splitting
         B is a vector of M elements
