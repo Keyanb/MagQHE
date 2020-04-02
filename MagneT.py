@@ -27,6 +27,8 @@ class MagneT(object):
         self._Gam = kwarg['Gamma'] if 'Gamma' in kwarg else self._EF/15
         self._s_default = 0
         self._B = kwarg['Bfield'] if 'Bfield' in kwarg else linspace(0.25,8,5000)
+        self._Bs = kwarg['Bsplit'] if 'Bfield' in kwarg else 2
+        
 
     def fd(self,E = None ,T = None, mu = None):
         """
@@ -76,8 +78,9 @@ class MagneT(object):
         # n = arange(self._N+1)[:, newaxis, newaxis] # N,1 elements (N=Nmax+1)
         n = arange(self._N+1)[:, newaxis, newaxis] # N,1 elements (N=Nmax+1)
         En = k.hbar*wc*(n+1./2) # NxM elements)
-        return 1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) * sum(exp(-(self._E-En)**2
+        self._dos = 1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) * sum(exp(-(self._E-En)**2
                                                                  /(2*self._Gam**2)), axis=0)
+        return self._dos
 
 
     def gElorentzian(self,B = None, E = None, Gam = None, Nmax = None):
@@ -96,7 +99,9 @@ class MagneT(object):
         l = sqrt(k.hbar/(k.e*self._B))  # M elements
         n = arange(self._N+1)[:, newaxis, newaxis] # N,1 elements (N=Nmax+1)
         En = k.hbar*wc*(n+1./2) # NxM elements)
-        return 1./(pi*l**2) * sum(self._Gam/((self._E-En)**2 + self._Gam**2), axis=0)
+        self._dos = 1./(pi*l**2) * sum(self._Gam/((self._E-En)**2 + self._Gam**2), axis=0)
+        return self._dos
+    
     
     def gESS(self,B = None, E = None,  Gam = None , Xi = None, Nmax = None, Bs = 2, alpha = 0, GL = 0):     
         """
@@ -111,13 +116,14 @@ class MagneT(object):
         GL determine if the density of state is Gausian (1) or Lorentzian (0)
         """
         if B: self._B = B
+        if Bs: self._Bs = Bs
         if Gam: self._Gam = Gam
         if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi
         Bp = self._B*cos(alpha)
         Bt = self._B
-        gp = 0.44+0.9*(1-1/(1+exp((self._B-Bs)/1)))
-        gn = 0.44+0.5*(1-1/(1+exp((self._B-Bs)/0.6)))
+        gp = 0.44+0.9*(1-1/(1+exp((self._B-self._Bs)/1)))
+        gn = 0.44+0.5*(1-1/(1+exp((self._B-self._Bs)/0.6)))
         mub = k.e*k.hbar/(2*self._m)
         wc = k.e*Bp/self._m     # M elements
         ws = k.e*Bt/self._m     # M elements
@@ -140,9 +146,9 @@ class MagneT(object):
                                                         axis=0))+ (1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) 
                                                                    *sum(exp(-(self._E-EnN)**2/(2*self._Gam**2)), axis=0)))
         else:
-            dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)*1./(pi*l**2)/2 *(sum(self._Gam/((self._E-EnP)**2 + self._Gam**2), axis=0) +
+            self._dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)*1./(pi*l**2)/2 *(sum(self._Gam/((self._E-EnP)**2 + self._Gam**2), axis=0) +
              sum(self._Gam/((self._E-EnN)**2 + self._Gam**2), axis=0))
-        return dos
+        return self._dos
     
     
 
@@ -215,6 +221,7 @@ class MagneT(object):
         Bs is the field for spin splitting (if Bs = 0 no spin splitting )
         """
         if B: self._B = B
+        if Bs: self._Bs = Bs
         if mu: self._mu = mu
         if Gam: self._Gam = Gam
         if T: self._T = T
@@ -239,10 +246,10 @@ class MagneT(object):
                     elif (bet[n,p]) < -50:
                         bet[n,p] = 0
                     
-        if Bs == 0:
+        if self._Bs == 0:
             Z = self.gEgaussian(E = E)*bet
         else:
-            Z = self.gESS(E = E, Bs = Bs, alpha = alpha , GL = GL)*bet
+            Z = self.gESS(E = E, alpha = alpha , GL = GL)*bet
         S = sum(Z, axis = 0)
         self._Om = -S*(max(E)-min(E))/shape(E)[0]*k.k*self._T
         return self._Om 
