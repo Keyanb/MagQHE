@@ -19,11 +19,11 @@ class MagneT(object):
         self._m = kwarg['mass'] if 'mass' in kwarg else 0.067*k.m_e
         self._T = kwarg['Temp'] if 'Temp' in kwarg else 15e-3
         self._p = kwarg['power'] if 'power' in kwarg else 0
-        self._N = kwarg['N-LL'] if 'N-LL' in kwarg else 50
+        self._N = kwarg['N-LL'] if 'N-LL' in kwarg else 100
         self._ns = kwarg['density'] if 'density' in kwarg else 2.75e15*0.99
-        self._mu = self._ns*pi*k.hbar**2/self._m
+        # self._mu = self._ns*pi*k.hbar**2/self._m
         self._EF = self._ns*pi*k.hbar**2/self._m
-        self._E = linspace(0,2*self._mu,1002)[:, newaxis]
+        # self._E = linspace(0,2*self._mu,1002)[:, newaxis]
         self._Gam = kwarg['Gamma'] if 'Gamma' in kwarg else self._EF/15
         self._s_default = 0
         self._B = kwarg['Bfield'] if 'Bfield' in kwarg else linspace(0.25,8,5000)
@@ -102,8 +102,28 @@ class MagneT(object):
         self._dos = 1./(pi*l**2) * sum(self._Gam/((self._E-En)**2 + self._Gam**2), axis=0)
         return self._dos
     
+    def Dbe(self,B = None, E = None, Gam = None, Xi = None, Nmax = None, gE=gEgaussian):
+        """
+        returns the density of state (Gaussian or Lorentzian with
+        a constant background tuned by Xi
+        B is a vector on M elements
+        E can also be a vector of L elements
+        """
+        if B: self._B = B
+        if Gam: self._Gam = Gam
+        if Nmax: self._N = Nmax
+        if Xi: self._Xi = Xi
+        single = False
+        if not isinstance(B, (list, ndarray)) and not isinstance(E, (list, ndarray)):
+            single = True
+            Ggi = self.gE()
+            self._dos = self._Xi*m/(pi*k.hbar**2)+(1-self._Xi)*2*k.e*B/(pi*k.h)*Ggi
+            if single:
+                return self._dos[0]
+            return self._dos
     
-    def gESS(self,B = None, E = None,  Gam = None , Xi = None, Nmax = None, Bs = None, alpha = 0, GL = 0):     
+    
+    def gESS(self,B = None, ns = None,  Gam = None , Xi = None, Nmax = None, Bs = None, alpha = 0, GL = 0):     
         """
         return: the density of state for LL with spin splitted with Gaussian or Lorentzian Broadening
         B is a vector of M elements
@@ -120,6 +140,10 @@ class MagneT(object):
         if Gam: self._Gam = Gam
         if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi
+        if ns: self._ns = ns
+        self._mu = self._ns*pi*k.hbar**2/self._m
+        self._EF = self._ns*pi*k.hbar**2/self._m
+        self._E = linspace(0,2*self._mu,1002)[:, newaxis]
         Bp = self._B*cos(alpha)
         Bt = self._B
         gp = 0.44+0.9*(1-1/(1+exp((self._B-self._Bs)/1)))
@@ -141,36 +165,24 @@ class MagneT(object):
         EnP = k.hbar*wc*(n+1./2)+Dp+ep
         EnN = k.hbar*wc*(n+1./2)-Dn
         if GL == 1:
-            self._dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)/2* ((1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) 
-                                                  * sum(exp(-(self._E-EnP)**2/(2*self._Gam**2)),
-                                                        axis=0))+ (1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) 
+            if self._Bs != 0:
+                self._dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)/2* ((1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) 
+                        * sum(exp(-(self._E-EnP)**2/(2*self._Gam**2)),axis=0))+ (1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) 
                                                                    *sum(exp(-(self._E-EnN)**2/(2*self._Gam**2)), axis=0)))
+            else:
+                self._dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)*1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) * sum(exp(-(self._E-En)**2
+                                                                 /(2*self._Gam**2)), axis=0)
         else:
-            self._dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)*1./(pi*l**2)/2 *(sum(self._Gam/((self._E-EnP)**2 + self._Gam**2), axis=0) +
-             sum(self._Gam/((self._E-EnN)**2 + self._Gam**2), axis=0))
+            if self._Bs != 0:
+                self._dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)*1./(pi*l**2)/2 *(sum(self._Gam/((self._E-EnP)**2 + self._Gam**2), axis=0) +
+                                        sum(self._Gam/((self._E-EnN)**2 + self._Gam**2), axis=0))
+            else:
+                self._dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)*1./(pi*l**2) * sum(self._Gam/((self._E-En)**2 + self._Gam**2), axis=0)    
         return self._dos
     
     
 
-    def Dbe(self,B = None, E = None, Gam = None, Xi = None, Nmax = None, gE=gEgaussian):
-        """
-        returns the density of state (Gaussian or Lorentzian with
-        a constant background tuned by Xi
-        B is a vector on M elements
-        E can also be a vector of L elements
-        """
-        if B: self._B = B
-        if Gam: self._Gam = Gam
-        if Nmax: self._N = Nmax
-        if Xi: self._Xi = Xi
-        single = False
-        if not isinstance(B, (list, ndarray)) and not isinstance(E, (list, ndarray)):
-            single = True
-            Ggi = self.gE()
-            ret = self._Xi*m/(pi*k.hbar**2)+(1-self._Xi)*2*k.e*B/(pi*k.h)*Ggi
-            if single:
-                return ret[0]
-            return ret
+    
 
     def fermi_weight(self,E = None, EF = None, T = None):
         """
