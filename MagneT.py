@@ -27,7 +27,7 @@ class MagneT(object):
         self._Gam = kwarg['Gamma'] if 'Gamma' in kwarg else self._EF/15
         self._s_default = 0
         self._B = kwarg['Bfield'] if 'Bfield' in kwarg else linspace(0.25,8,5000)
-        self._Bs = kwarg['Bsplit'] if 'Bfield' in kwarg else 2
+        self._Bs = kwarg['Bsplit'] if 'Bsplit' in kwarg else 2
         
 
     def fd(self,E = None ,T = None, mu = None):
@@ -103,7 +103,7 @@ class MagneT(object):
         return self._dos
     
     
-    def gESS(self,B = None, E = None,  Gam = None , Xi = None, Nmax = None, Bs = 2, alpha = 0, GL = 0):     
+    def gESS(self,B = None, E = None,  Gam = None , Xi = None, Nmax = None, Bs = None, alpha = 0, GL = 0):     
         """
         return: the density of state for LL with spin splitted with Gaussian or Lorentzian Broadening
         B is a vector of M elements
@@ -113,7 +113,7 @@ class MagneT(object):
         Nmax is the number of LL to use for the calculation
         Bs is the magnetic field of spin splitting
         alpha is the angle of the magnetic field relative to the perpendicular axis of the 2deg (not functional yet)
-        GL determine if the density of state is Gausian (1) or Lorentzian (0)
+        GL determine if the density of state is Gaussian (1) or Lorentzian (0)
         """
         if B: self._B = B
         if Bs: self._Bs = Bs
@@ -141,7 +141,7 @@ class MagneT(object):
         EnP = k.hbar*wc*(n+1./2)+Dp+ep
         EnN = k.hbar*wc*(n+1./2)-Dn
         if GL == 1:
-            dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)/2* ((1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) 
+            self._dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)/2* ((1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) 
                                                   * sum(exp(-(self._E-EnP)**2/(2*self._Gam**2)),
                                                         axis=0))+ (1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) 
                                                                    *sum(exp(-(self._E-EnN)**2/(2*self._Gam**2)), axis=0)))
@@ -215,7 +215,7 @@ class MagneT(object):
         I4 = -(hwc)**2/(4*pi**2*n**2*k.k*self._T) + hwc/(2*n)*cos(2*pi*n*mu/hwc)/sinh(2*pi**2*n*k.k*self._T/hwc)
         return m*k.k*self._T/(pi*k.hbar**2)*(I3+2*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*self._Gam)**2/(hwc)**2)*I4, axis=0))
 
-    def OmegaC(self, B = None, T = None, mu = None, Gam = None, Xi = None, Nmax = None, Bs = 2, GL = 1, alpha = 0):
+    def OmegaC(self, B = None, T = None, mu = None, Gam = None, Xi = None, Nmax = None, Bs = None, GL = 1, alpha = 0):
         """
         Numeric calculation of the thermodynamic grand potential, 
         Bs is the field for spin splitting (if Bs = 0 no spin splitting )
@@ -245,8 +245,9 @@ class MagneT(object):
                         bet[n,p] = log(1+exp(bet[n,p]))
                     elif (bet[n,p]) < -50:
                         bet[n,p] = 0
-                    
-        if self._Bs == 0:
+        if isinstance(self._dos,(np.ndarray, float,int)):    
+            Z = self._dos*bet
+        elif self._Bs == 0:
             Z = self.gEgaussian(E = E)*bet
         else:
             Z = self.gESS(E = E, alpha = alpha , GL = GL)*bet
@@ -331,7 +332,7 @@ class MagneT(object):
         if Nmax: self._N = Nmax
         if p: self._p = p
         if self._s_default: self._s_default = s
-        wc = k.e*B/self._m
+        wc = k.e*self._B/self._m
         n = arange(1,self._N+1)[:, newaxis, newaxis] # N,1 elements (N=Nmax+1)
         hwc = k.hbar*wc    
         smu = 2*pi*n*self._mu/(hwc) + phi*2*pi*n #2nd term is a Berry phase 
@@ -351,15 +352,15 @@ class MagneT(object):
         if T: self._T = T
         if Nmax: self._N = Nmax
         if self._s_default: self._s_default = s
-        wc = k.e*B/self._m
-        n = arange(1,self._Nmax+1)[:, newaxis, newaxis] # N,1 elements (N=Nmax+1)
+        wc = k.e*self._B/self._m
+        n = arange(1,self._N+1)[:, newaxis, newaxis] # N,1 elements (N=Nmax+1)
         hwc = k.hbar*wc    
         smu = 2*pi*n*self._mu/(hwc) + phi*2*pi*n #2nd term is a Berry phase 
         skt = 2*pi**2*n*k.k*self._T/(hwc)
         Gam = self._Gam*self._B**self._p
-        I1 = mu+k.k*self._T*log(1+exp(-self._mu/(k.k*T)))
+        I1 = self._mu+k.k*self._T*log(1+exp(-self._mu/(k.k*self._T)))
         I2 = pi*k.k*self._T*sin(smu)/sinh(2*pi**2*n*k.k*self._T/hwc)
-        return m/(pi*k.hbar**2)*(I1+2*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)/(hwc))*I2, axis=0))
+        return self._m/(pi*k.hbar**2)*(I1+2*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*self._Gam)/(hwc))*I2, axis=0))
 
     def nsbC(self, B = None, mu = None, T = None, Gam = None, Xi = None, p = None,
              Nmax = None, alpha = 0, GL = 1, Bs = 2):
