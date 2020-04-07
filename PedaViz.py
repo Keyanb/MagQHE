@@ -68,7 +68,8 @@ app.layout = html.Div(children=[
         dcc.Checklist(
             id = 'gocal',
             options = [
-                {'label': 'Grand potential calculation', 'value': 'Go'}])
+                {'label': 'Grand potential calculation', 'value': 'Go'}],
+            value = '')
         ]),
     html.Div([
         dcc.Graph(
@@ -97,23 +98,30 @@ def update_graph(nel):
         )]
     }
 
+
+
+
+
+
 @app.callback(
     dash.dependencies.Output('GranPot-graph', 'figure'),
-    [dash.dependencies.Input('gocal', 'value')])
-def update_graph(value):  
-    if value == 'Go': 
-        dfo = pd.DataFrame({'Bfield':M._B, 'Grand Potential': Om})
-        return {
-            'data': [dict(
-                x=dfo['Bfield'],
-                y=dfo['Grand Potential'],
+    [dash.dependencies.Input('gocal', 'value'),
+    dash.dependencies.Input('nelec', 'value')])
+def update_graph2(val, nel):  
+    dfo = pd.DataFrame({'Bfield':M._B, 'GrandPotential': g[0]})
+    if 'Go' in val : 
+        dfo = pd.DataFrame({'Bfield':M._B, 'GrandPotential': Om})
+    return {
+        'data': [dict(
+              x=dfo['Bfield'],
+              y=dfo['GrandPotential'],
                 # text=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
                 #customdata=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
                 #mode='markers',
-                marker={
-                    'size': 15,
-                    'opacity': 0.5,
-                    'line': {'width': 0.5, 'color': 'white'}
+              marker={
+                  'size': 15,
+                  'opacity': 0.5,
+                  'line': {'width': 0.5, 'color': 'white'}
             }
         )]
     }
