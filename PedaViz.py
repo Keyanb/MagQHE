@@ -6,9 +6,11 @@ Created on Mon Apr  6 14:46:13 2020
 """
 
 import numpy as np
+from pylab import *
 import matplotlib.pyplot as plt
 import MagneT 
 import pandas as pd
+from scipy import constants as k
 
 
 import dash
@@ -16,8 +18,8 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
 
-
-M = MagneT.MagneT(density = 4e15) 
+ni = 4e15
+M = MagneT.MagneT(density = ni) 
 
 
 # Let's calculate the density of state:
@@ -28,7 +30,7 @@ g = M.gESS()
 
 
 
-Om = M.OmegaC()
+
 # Oms = Ms.OmegaC()
 
 
@@ -73,9 +75,11 @@ app.layout = html.Div(children=[
         ]),
     html.Div([
         dcc.Graph(
-            id='GranPot-graph')]
+            id='GranPot-graph')]),
+    html.Div([
+        html.Div(id='my-div') ])
         
-    )])
+    ])
            
 
 @app.callback(
@@ -101,15 +105,18 @@ def update_graph(nel):
 
 
 
-
-
 @app.callback(
     dash.dependencies.Output('GranPot-graph', 'figure'),
     [dash.dependencies.Input('gocal', 'value'),
     dash.dependencies.Input('nelec', 'value')])
-def update_graph2(val, nel):  
+def update_graph2(val, nel): 
+    # ns = M._m/(np.pi*k.hbar**2)*nel 
+    nsc  = nel/1002*ni    
     dfo = pd.DataFrame({'Bfield':M._B, 'GrandPotential': g[0]})
+    Om = 0
     if 'Go' in val : 
+        M.gESS(ns = nsc)
+        Om = M.OmegaC()
         dfo = pd.DataFrame({'Bfield':M._B, 'GrandPotential': Om})
     return {
         'data': [dict(
@@ -125,6 +132,13 @@ def update_graph2(val, nel):
             }
         )]
     }
+
+@app.callback(
+    Output(component_id='my-div', component_property='children'),
+    [Input(component_id='gocal', component_property='value')]
+)
+def update_output_div(input_value):
+    return 'You\'ve entered "{}"'.format(input_value)
 
 
 if __name__ == '__main__':
