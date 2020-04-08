@@ -26,7 +26,8 @@ class MagneT(object):
         # self._E = linspace(0,2*self._mu,1002)[:, newaxis]
         self._Gam = kwarg['Gamma'] if 'Gamma' in kwarg else self._EF/15
         self._s_default = 0
-        self._B = kwarg['Bfield'] if 'Bfield' in kwarg else linspace(0.25,8,5000)
+        B1 = linspace(0.125,4,3000)
+        self._B = kwarg['Bfield'] if 'Bfield' in kwarg else 1/B1[::-1]
         self._Bs = kwarg['Bsplit'] if 'Bsplit' in kwarg else 2
         
 
@@ -136,7 +137,7 @@ class MagneT(object):
         GL determine if the density of state is Gaussian (1) or Lorentzian (0)
         """
         if B: self._B = B
-        if Bs: self._Bs = Bs
+        if isinstance(Bs,(np.ndarray, float,int)) : self._Bs = Bs
         if Gam: self._Gam = Gam
         if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi

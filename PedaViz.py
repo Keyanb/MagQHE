@@ -24,7 +24,7 @@ M = MagneT.MagneT(density = ni)
 
 
 # Let's calculate the density of state:
-g = M.gESS()
+g = M.gESS(Bs = 0)
 
 
 # Then the grand thermodynamic potential
@@ -63,13 +63,20 @@ app.layout = html.Div(children=[
              max = np.shape(g)[0],
              value= 500,
              step = 10
-            )]),
+            )
+        ]),
 
     html.Div([
         dcc.Graph(
             id='density-graph'),
         html.H1('Progress bar'),
     dbc.Progress(id="progress", value=50, striped=True, animated=True)]),
+    html.Div([
+    dcc.Input(
+             id='Bsplit',             
+             value= '',
+             
+            )]),
     html.Div([
         dcc.Checklist(
             id = 'gocal',
@@ -95,8 +102,11 @@ app.layout = html.Div(children=[
 
 @app.callback(
     dash.dependencies.Output('density-graph', 'figure'),
-    [dash.dependencies.Input('nelec', 'value')])
-def update_graph(nel):    
+    [dash.dependencies.Input('nelec', 'value'),
+    dash.dependencies.Input('Bsplit', 'value')]
+    )
+def update_graph(nel,Bsp): 
+    
     df = pd.DataFrame({'Bfield':M._B, 'DOS': g[nel]})
     return {
         'data': [dict(
