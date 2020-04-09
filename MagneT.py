@@ -116,8 +116,9 @@ class MagneT(object):
         if Xi: self._Xi = Xi
         Bp = self._B*cos(alpha)
         Bt = self._B
-        gp = 0.44+0.9*(1-1/(1+exp((self._B-Bs)/1)))
-        gn = 0.44+0.5*(1-1/(1+exp((self._B-Bs)/0.6)))
+        g0 = 0.44
+        gp = g0+0.9*(1-1/(1+exp((self._B-Bs)/1)))
+        gn = go+0.5*(1-1/(1+exp((self._B-Bs)/0.6)))
         mub = k.e*k.hbar/(2*self._m)
         wc = k.e*Bp/self._m     # M elements
         ws = k.e*Bt/self._m     # M elements
