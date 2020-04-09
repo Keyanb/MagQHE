@@ -19,14 +19,16 @@ class MagneT(object):
         self._m = kwarg['mass'] if 'mass' in kwarg else 0.067*k.m_e
         self._T = kwarg['Temp'] if 'Temp' in kwarg else 15e-3
         self._p = kwarg['power'] if 'power' in kwarg else 0
-        self._N = kwarg['N-LL'] if 'N-LL' in kwarg else 50
+        self._N = kwarg['N-LL'] if 'N-LL' in kwarg else 100
         self._ns = kwarg['density'] if 'density' in kwarg else 2.75e15*0.99
-        self._mu = self._ns*pi*k.hbar**2/self._m
+        # self._mu = self._ns*pi*k.hbar**2/self._m
         self._EF = self._ns*pi*k.hbar**2/self._m
-        self._E = linspace(0,2*self._mu,1002)[:, newaxis]
+        # self._E = linspace(0,2*self._mu,1002)[:, newaxis]
         self._Gam = kwarg['Gamma'] if 'Gamma' in kwarg else self._EF/15
         self._s_default = 0
         self._B = kwarg['Bfield'] if 'Bfield' in kwarg else linspace(0.25,8,5000)
+        self._Bs = kwarg['Bsplit'] if 'Bsplit' in kwarg else 2
+        
 
     def fd(self,E = None ,T = None, mu = None):
         """
@@ -76,8 +78,9 @@ class MagneT(object):
         # n = arange(self._N+1)[:, newaxis, newaxis] # N,1 elements (N=Nmax+1)
         n = arange(self._N+1)[:, newaxis, newaxis] # N,1 elements (N=Nmax+1)
         En = k.hbar*wc*(n+1./2) # NxM elements)
-        return 1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) * sum(exp(-(self._E-En)**2
+        self._dos = 1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) * sum(exp(-(self._E-En)**2
                                                                  /(2*self._Gam**2)), axis=0)
+        return self._dos
 
 
     def gElorentzian(self,B = None, E = None, Gam = None, Nmax = None):
@@ -96,9 +99,31 @@ class MagneT(object):
         l = sqrt(k.hbar/(k.e*self._B))  # M elements
         n = arange(self._N+1)[:, newaxis, newaxis] # N,1 elements (N=Nmax+1)
         En = k.hbar*wc*(n+1./2) # NxM elements)
-        return 1./(pi*l**2) * sum(self._Gam/((self._E-En)**2 + self._Gam**2), axis=0)
+        self._dos = 1./(pi*l**2) * sum(self._Gam/((self._E-En)**2 + self._Gam**2), axis=0)
+        return self._dos
     
-    def gESS(self,B = None, E = None,  Gam = None , Xi = None, Nmax = None, Bs = 2, alpha = 0, GL = 0):     
+    def Dbe(self,B = None, E = None, Gam = None, Xi = None, Nmax = None, gE=gEgaussian):
+        """
+        returns the density of state (Gaussian or Lorentzian with
+        a constant background tuned by Xi
+        B is a vector on M elements
+        E can also be a vector of L elements
+        """
+        if B: self._B = B
+        if Gam: self._Gam = Gam
+        if Nmax: self._N = Nmax
+        if Xi: self._Xi = Xi
+        single = False
+        if not isinstance(B, (list, ndarray)) and not isinstance(E, (list, ndarray)):
+            single = True
+            Ggi = self.gE()
+            self._dos = self._Xi*m/(pi*k.hbar**2)+(1-self._Xi)*2*k.e*B/(pi*k.h)*Ggi
+            if single:
+                return self._dos[0]
+            return self._dos
+    
+    
+    def gESS(self,B = None, ns = None,  Gam = None , Xi = None, Nmax = None, Bs = None, alpha = 0, GL = 0):     
         """
         return: the density of state for LL with spin splitted with Gaussian or Lorentzian Broadening
         B is a vector of M elements
@@ -108,12 +133,17 @@ class MagneT(object):
         Nmax is the number of LL to use for the calculation
         Bs is the magnetic field of spin splitting
         alpha is the angle of the magnetic field relative to the perpendicular axis of the 2deg (not functional yet)
-        GL determine if the density of state is Gausian (1) or Lorentzian (0)
+        GL determine if the density of state is Gaussian (1) or Lorentzian (0)
         """
         if B: self._B = B
+        if Bs: self._Bs = Bs
         if Gam: self._Gam = Gam
         if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi
+        if ns: self._ns = ns
+        self._mu = self._ns*pi*k.hbar**2/self._m
+        self._EF = self._ns*pi*k.hbar**2/self._m
+        self._E = linspace(0,2*self._mu,1002)[:, newaxis]
         Bp = self._B*cos(alpha)
         Bt = self._B
         g0 = 0.44
@@ -136,36 +166,24 @@ class MagneT(object):
         EnP = k.hbar*wc*(n+1./2)+Dp+ep
         EnN = k.hbar*wc*(n+1./2)-Dn
         if GL == 1:
-            dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)/2* ((1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) 
-                                                  * sum(exp(-(self._E-EnP)**2/(2*self._Gam**2)),
-                                                        axis=0))+ (1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) 
+            if self._Bs != 0:
+                self._dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)/2* ((1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) 
+                        * sum(exp(-(self._E-EnP)**2/(2*self._Gam**2)),axis=0))+ (1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) 
                                                                    *sum(exp(-(self._E-EnN)**2/(2*self._Gam**2)), axis=0)))
+            else:
+                self._dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)*1./(pi*l**2) * 1/(sqrt(2*pi)*self._Gam) * sum(exp(-(self._E-En)**2
+                                                                 /(2*self._Gam**2)), axis=0)
         else:
-            dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)*1./(pi*l**2)/2 *(sum(self._Gam/((self._E-EnP)**2 + self._Gam**2), axis=0) +
-             sum(self._Gam/((self._E-EnN)**2 + self._Gam**2), axis=0))
-        return dos
+            if self._Bs != 0:
+                self._dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)*1./(pi*l**2)/2 *(sum(self._Gam/((self._E-EnP)**2 + self._Gam**2), axis=0) +
+                                        sum(self._Gam/((self._E-EnN)**2 + self._Gam**2), axis=0))
+            else:
+                self._dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)*1./(pi*l**2) * sum(self._Gam/((self._E-En)**2 + self._Gam**2), axis=0)    
+        return self._dos
     
     
 
-    def Dbe(self,B = None, E = None, Gam = None, Xi = None, Nmax = None, gE=gEgaussian):
-        """
-        returns the density of state (Gaussian or Lorentzian with
-        a constant background tuned by Xi
-        B is a vector on M elements
-        E can also be a vector of L elements
-        """
-        if B: self._B = B
-        if Gam: self._Gam = Gam
-        if Nmax: self._N = Nmax
-        if Xi: self._Xi = Xi
-        single = False
-        if not isinstance(B, (list, ndarray)) and not isinstance(E, (list, ndarray)):
-            single = True
-            Ggi = self.gE()
-            ret = self._Xi*m/(pi*k.hbar**2)+(1-self._Xi)*2*k.e*B/(pi*k.h)*Ggi
-            if single:
-                return ret[0]
-            return ret
+    
 
     def fermi_weight(self,E = None, EF = None, T = None):
         """
@@ -210,12 +228,13 @@ class MagneT(object):
         I4 = -(hwc)**2/(4*pi**2*n**2*k.k*self._T) + hwc/(2*n)*cos(2*pi*n*mu/hwc)/sinh(2*pi**2*n*k.k*self._T/hwc)
         return m*k.k*self._T/(pi*k.hbar**2)*(I3+2*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*self._Gam)**2/(hwc)**2)*I4, axis=0))
 
-    def OmegaC(self, B = None, T = None, mu = None, Gam = None, Xi = None, Nmax = None, Bs = 2, GL = 1, alpha = 0):
+    def OmegaC(self, B = None, T = None, mu = None, Gam = None, Xi = None, Nmax = None, Bs = None, GL = 1, alpha = 0):
         """
         Numeric calculation of the thermodynamic grand potential, 
         Bs is the field for spin splitting (if Bs = 0 no spin splitting )
         """
         if B: self._B = B
+        if Bs: self._Bs = Bs
         if mu: self._mu = mu
         if Gam: self._Gam = Gam
         if T: self._T = T
@@ -239,11 +258,12 @@ class MagneT(object):
                         bet[n,p] = log(1+exp(bet[n,p]))
                     elif (bet[n,p]) < -50:
                         bet[n,p] = 0
-                    
-        if Bs == 0:
+        if isinstance(self._dos,(np.ndarray, float,int)):    
+            Z = self._dos*bet
+        elif self._Bs == 0:
             Z = self.gEgaussian(E = E)*bet
         else:
-            Z = self.gESS(E = E, Bs = Bs, alpha = alpha , GL = GL)*bet
+            Z = self.gESS(E = E, alpha = alpha , GL = GL)*bet
         S = sum(Z, axis = 0)
         self._Om = -S*(max(E)-min(E))/shape(E)[0]*k.k*self._T
         return self._Om 
@@ -325,7 +345,7 @@ class MagneT(object):
         if Nmax: self._N = Nmax
         if p: self._p = p
         if self._s_default: self._s_default = s
-        wc = k.e*B/self._m
+        wc = k.e*self._B/self._m
         n = arange(1,self._N+1)[:, newaxis, newaxis] # N,1 elements (N=Nmax+1)
         hwc = k.hbar*wc    
         smu = 2*pi*n*self._mu/(hwc) + phi*2*pi*n #2nd term is a Berry phase 
@@ -345,15 +365,15 @@ class MagneT(object):
         if T: self._T = T
         if Nmax: self._N = Nmax
         if self._s_default: self._s_default = s
-        wc = k.e*B/self._m
-        n = arange(1,self._Nmax+1)[:, newaxis, newaxis] # N,1 elements (N=Nmax+1)
+        wc = k.e*self._B/self._m
+        n = arange(1,self._N+1)[:, newaxis, newaxis] # N,1 elements (N=Nmax+1)
         hwc = k.hbar*wc    
         smu = 2*pi*n*self._mu/(hwc) + phi*2*pi*n #2nd term is a Berry phase 
         skt = 2*pi**2*n*k.k*self._T/(hwc)
         Gam = self._Gam*self._B**self._p
-        I1 = mu+k.k*self._T*log(1+exp(-self._mu/(k.k*T)))
+        I1 = self._mu+k.k*self._T*log(1+exp(-self._mu/(k.k*self._T)))
         I2 = pi*k.k*self._T*sin(smu)/sinh(2*pi**2*n*k.k*self._T/hwc)
-        return m/(pi*k.hbar**2)*(I1+2*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)/(hwc))*I2, axis=0))
+        return self._m/(pi*k.hbar**2)*(I1+2*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*self._Gam)/(hwc))*I2, axis=0))
 
     def nsbC(self, B = None, mu = None, T = None, Gam = None, Xi = None, p = None,
              Nmax = None, alpha = 0, GL = 1, Bs = 2):
