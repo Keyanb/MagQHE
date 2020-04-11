@@ -20,28 +20,13 @@ from dash.dependencies import Input, Output
 import dash_bootstrap_components as dbc
 
 ni = 4e15
-M = MagneT.MagneT(density = ni) 
-
+B1 = linspace(0.125,1.5,2500)
+Bf = 1/B1
+NLL = 50
+M = MagneT.MagneT(density = ni, NLL = NLL, Bfield = Bf) 
 
 # Let's calculate the density of state:
-g = M.gESS(Bs = 0)
-
-
-# Then the grand thermodynamic potential
-
-
-
-
-# Oms = Ms.OmegaC()
-
-
-# # Finally, we can calculate the magnetization:
-
-
-# Mag = M.MagC()
-# Mags = Ms.MagC()
-
-# df = pd.DataFrame({'Bfield':B, 'DOS': g[-1,:-1], 'Grand Potential': Om[:-1], 'Magnetization': Mag})
+g = M.gESS(Bs = 2)
 
 
 # external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -57,12 +42,26 @@ app.layout = html.Div(children=[
         Visualization to understand magnetization
     '''),
      html.Div([
+         html.Label(r'Density $m^{-2}$'),
          dcc.Slider(
              id='nelec',
              min = 0,
              max = np.shape(g)[0],
+             marks={i: '{:.2E}'.format(i*ni/np.shape(g)[0]) for i in range(1, np.shape(g)[0], 100)},
              value= 500,
              step = 10
+            )
+        ]),
+     html.Div([
+         html.Label(r'x axis'),
+         dcc.Dropdown(
+             id='Bfstyle',
+             options=[
+            {'label': 'Magnetic field', 'value': 'Bf'},
+            {'label': u'inverse magnetic field', 'value': 'B1f'},          
+            ],
+            value='Bf'
+             
             )
         ]),
 
@@ -103,11 +102,15 @@ app.layout = html.Div(children=[
 @app.callback(
     dash.dependencies.Output('density-graph', 'figure'),
     [dash.dependencies.Input('nelec', 'value'),
-    dash.dependencies.Input('Bsplit', 'value')]
+    dash.dependencies.Input('Bsplit', 'value'),
+    dash.dependencies.Input('Bfstyle', 'value')]
     )
-def update_graph(nel,Bsp): 
-    
+def update_graph(nel,Bsp,bfs): 
     df = pd.DataFrame({'Bfield':M._B, 'DOS': g[nel]})
+    if bfs == 'Bf':
+        df['Bfield'] = M._B
+    else:
+         df['Bfield'] = 1/M._B
     return {
         'data': [dict(
             x=df['Bfield'],
@@ -122,7 +125,6 @@ def update_graph(nel,Bsp):
             }
         )]
     }
-
 
 
 
@@ -143,7 +145,7 @@ def update_graph2(val, nel):
         'data': [dict(
               x=dfo['Bfield'],
               y=dfo['GrandPotential'],
-                # text=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
+              text= 'Density',
                 #customdata=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
                 #mode='markers',
               marker={
@@ -180,7 +182,7 @@ def update_graph3(val2):
 
 @app.callback(
     Output(component_id='my-div', component_property='children'),
-    [Input(component_id='gocal', component_property='value')]
+    [Input(component_id='nelec', component_property='value')]
 )
 def update_output_div(input_value):
     return 'You\'ve entered "{}"'.format(input_value)

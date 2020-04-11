@@ -19,7 +19,7 @@ class MagneT(object):
         self._m = kwarg['mass'] if 'mass' in kwarg else 0.067*k.m_e
         self._T = kwarg['Temp'] if 'Temp' in kwarg else 15e-3
         self._p = kwarg['power'] if 'power' in kwarg else 0
-        self._N = kwarg['N-LL'] if 'N-LL' in kwarg else 100
+        self._N = kwarg['NLL'] if 'NLL' in kwarg else 100
         self._ns = kwarg['density'] if 'density' in kwarg else 2.75e15*0.99
         # self._mu = self._ns*pi*k.hbar**2/self._m
         self._EF = self._ns*pi*k.hbar**2/self._m
@@ -123,6 +123,42 @@ class MagneT(object):
                 return self._dos[0]
             return self._dos
     
+    def gEA(self,B = None, ns = None,  Gam = None , Xi = None, Nmax = None, Bs = None, alpha = 0, GL = 0, nis = 100):
+        """
+        return: the density of state (analytically calculated with Fourrier transform)
+        for LL  with Gaussian or Lorentzian Broadening
+        B is a vector of M elements
+        E is a vector of L elements
+        Gam is the Landau level broadening
+        Xi is the part of constant background density of state
+        Nmax is the number of LL to use for the calculation
+        GL determine if the density of state is Gaussian (1) or Lorentzian (0)
+        """
+        
+        if B: self._B = B
+        if Gam: self._Gam = Gam
+        if Nmax: self._N = Nmax
+        if Xi: self._Xi = Xi
+        if ns: self._ns = ns
+       
+        E = self._ns*pi*k.hbar**2/self._m
+        Bp = self._B*cos(alpha)
+        Bt = self._B
+        mub = k.e*k.hbar/(2*self._m)
+        hwc = k.hbar*k.e*Bp/self._m     # M elements
+        al = self._m/(pi*k.hbar**2)
+        Gam = self._Gam*self._B**self._p
+        
+        s = zeros((shape(self._B)[0],nis))
+        for i in range(shape(self._B)[0]): s[i] = arange(nis)
+        s = transpose(s)
+        if GL == 1:        
+            self._dos = al*(1+2*(1-self._Xi)* sum((-1)**s*exp(-2*(s*pi*Gam)**2/hwc**2)*cos(2*s*pi*E/hwc), axis=0))
+        else:
+            self._dos = al*(1+2*(1-self._Xi)* sum((-1)**s*exp(-2*(s*pi*Gam)/hwc)*cos(2*s*pi*E/hwc), axis=0))
+        return self._dos
+    
+    
     
     def gESS(self,B = None, ns = None,  Gam = None , Xi = None, Nmax = None, Bs = None, alpha = 0, GL = 0):     
         """
@@ -148,8 +184,8 @@ class MagneT(object):
         Bp = self._B*cos(alpha)
         Bt = self._B
         g0 = 0.44
-        gp = g0+0.9*(1-1/(1+exp((self._B-Bs)/1)))
-        gn = go+0.5*(1-1/(1+exp((self._B-Bs)/0.6)))
+        gp = g0+0.9*(1-1/(1+exp((self._B-self._Bs)/1)))
+        gn = g0+0.5*(1-1/(1+exp((self._B-self._Bs)/0.6)))
         mub = k.e*k.hbar/(2*self._m)
         wc = k.e*Bp/self._m     # M elements
         ws = k.e*Bt/self._m     # M elements
