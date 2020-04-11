@@ -29,6 +29,7 @@ class MagneT(object):
         B1 = linspace(0.125,4,3000)
         self._B = kwarg['Bfield'] if 'Bfield' in kwarg else 1/B1[::-1]
         self._Bs = kwarg['Bsplit'] if 'Bsplit' in kwarg else 2
+        self._GL = kwarg['broadening'] if 'broadening' in kwarg else 0
         
 
     def fd(self,E = None ,T = None, mu = None):
@@ -123,7 +124,7 @@ class MagneT(object):
                 return self._dos[0]
             return self._dos
     
-    def gEA(self,B = None, ns = None,  Gam = None , Xi = None, Nmax = None, Bs = None, alpha = 0, GL = 0, nis = 100):
+    def gEA(self,B = None, ns = None,  Gam = None , Xi = None, Nmax = None, Bs = None,  GL = None, alpha = 0, nis = 100):
         """
         return: the density of state (analytically calculated with Fourrier transform)
         for LL  with Gaussian or Lorentzian Broadening
@@ -140,6 +141,7 @@ class MagneT(object):
         if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi
         if ns: self._ns = ns
+        if GL: self._GL = GL
        
         E = self._ns*pi*k.hbar**2/self._m
         Bp = self._B*cos(alpha)
@@ -160,7 +162,7 @@ class MagneT(object):
     
     
     
-    def gESS(self,B = None, ns = None,  Gam = None , Xi = None, Nmax = None, Bs = None, alpha = 0, GL = 0):     
+    def gESS(self,B = None, ns = None,  Gam = None , Xi = None, Nmax = None, Bs = None, GL = None, alpha = 0, GL = 0):     
         """
         return: the density of state for LL with spin splitted with Gaussian or Lorentzian Broadening
         B is a vector of M elements
@@ -178,6 +180,7 @@ class MagneT(object):
         if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi
         if ns: self._ns = ns
+        if GL: self._GL = GL
         self._mu = self._ns*pi*k.hbar**2/self._m
         self._EF = self._ns*pi*k.hbar**2/self._m
         self._E = linspace(0,2*self._mu,1002)[:, newaxis]
@@ -265,7 +268,7 @@ class MagneT(object):
         I4 = -(hwc)**2/(4*pi**2*n**2*k.k*self._T) + hwc/(2*n)*cos(2*pi*n*mu/hwc)/sinh(2*pi**2*n*k.k*self._T/hwc)
         return m*k.k*self._T/(pi*k.hbar**2)*(I3+2*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*self._Gam)**2/(hwc)**2)*I4, axis=0))
 
-    def OmegaC(self, B = None, T = None, mu = None, Gam = None, Xi = None, Nmax = None, Bs = None, GL = 1, alpha = 0):
+    def OmegaC(self, B = None, T = None, mu = None, Gam = None, Xi = None, Nmax = None, Bs = None, GL = None , alpha = 0):
         """
         Numeric calculation of the thermodynamic grand potential, 
         Bs is the field for spin splitting (if Bs = 0 no spin splitting )
@@ -277,6 +280,7 @@ class MagneT(object):
         if T: self._T = T
         if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi
+        if GL: self._GL = GL
         if shape(self._mu) == ():
             E = linspace(0,2*self._mu,1002)[:, newaxis]
         else:
@@ -300,7 +304,7 @@ class MagneT(object):
         elif self._Bs == 0:
             Z = self.gEgaussian(E = E)*bet
         else:
-            Z = self.gESS(E = E, alpha = alpha , GL = GL)*bet
+            Z = self.gESS(E = E, alpha = alpha )*bet
         S = sum(Z, axis = 0)
         self._Om = -S*(max(E)-min(E))/shape(E)[0]*k.k*self._T
         return self._Om 
