@@ -23,8 +23,8 @@ import dash_bootstrap_components as dbc
 B1 = linspace(0.125,1.5,2500)
 Bf = 1/B1
 NLL = 50
-M = MagneT.MagneT( NLL = NLL, Bfield = Bf, N_sum_E = 500) 
-
+Ma = MagneT.MagneT( NLL = NLL, Bfield = Bf, N_sum_E = 500) 
+Mc = MagneT.MagneT( NLL = NLL, Bfield = Bf, N_sum_E = 500) 
 
 # Let's calculate the density of state:
 # g = M.gESS(Bs = 2)
@@ -54,7 +54,7 @@ app.layout = html.Div(children=[
              id='nelec',
              min = 0,
              max = 1e16,
-             marks={i: '{:.2E}'.format(i) for i in range(0,int(1e16),int(1e15))},
+             marks={i: '{:.1E}'.format(i) for i in range(0,int(1e16),int(1e15))},
              value= 3e15,
              step = 1e14
             ),
@@ -102,7 +102,7 @@ app.layout = html.Div(children=[
         style={'width': '48%', 'float': 'right', 'display': 'inline-block'}),
     
     html.Div([
-        html.Label(r'graph'),
+        html.Label(r'Density of state calculated numerically (allow spin splitting'),
         dcc.Graph(
             id='density-graph') ]),
     #     html.H1('Progress bar'),
@@ -126,6 +126,8 @@ app.layout = html.Div(children=[
     html.Div([
         dcc.Graph(
             id='GranPot-graph'),
+        dcc.Graph(
+            id = 'Granpot-graphC'),
         dcc.Checklist(
             id = 'gocal2',
             options = [
@@ -150,12 +152,12 @@ app.layout = html.Div(children=[
     dash.dependencies.Input('Bfstyle', 'value')]
     )
 def update_graph(nel,gam, Xi, GLo, bfs): 
-    gEA = M.gEA(ns = nel, Gam = gam*k.k, Xi = float(Xi), GL = int(GLo))
-    dfA = pd.DataFrame({'Bfield':M._B, 'DOSEF': gEA})
+    gEA = Ma.gEA(ns = nel, Gam = gam*k.k, Xi = float(Xi), GL = int(GLo))
+    dfA = pd.DataFrame({'Bfield':Ma._B, 'DOSEF': gEA})
     if bfs == 'Bf':
-        dfA['Bfield'] = M._B
+        dfA['Bfield'] = Ma._B
     else:
-         dfA['Bfield'] = 1/M._B
+         dfA['Bfield'] = 1/Ma._B
     return {
         'data': [dict(
             x=dfA['Bfield'],
@@ -181,12 +183,12 @@ def update_graph(nel,gam, Xi, GLo, bfs):
     dash.dependencies.Input('Bfstyle', 'value')]
     )
 def update_graph(nel,gam, Xi, GLo, Bsp, bfs): 
-    g = M.gESS(Bs = float(Bsp),ns = nel, Gam = gam*k.k, Xi = float(Xi), GL = int(GLo) )
-    df = pd.DataFrame({'Bfield':M._B, 'DOS': g[shape(g)[0]//2]})
+    g = Mc.gESS(Bs = float(Bsp),ns = nel, Gam = gam*k.k, Xi = float(Xi), GL = int(GLo) )
+    df = pd.DataFrame({'Bfield':Mc._B, 'DOS': g[shape(g)[0]//2]})
     if bfs == 'Bf':
-        df['Bfield'] = M._B
+        df['Bfield'] = Mc._B
     else:
-         df['Bfield'] = 1/M._B
+         df['Bfield'] = 1/Mc._B
     return {
         'data': [dict(
             x=df['Bfield'],
@@ -204,16 +206,49 @@ def update_graph(nel,gam, Xi, GLo, Bsp, bfs):
 
 @app.callback(
     dash.dependencies.Output('GranPot-graph', 'figure'),
+    [dash.dependencies.Input('nelec', 'value'),
+    dash.dependencies.Input('gamma', 'value'),
+    dash.dependencies.Input('Xi', 'value'),
+    dash.dependencies.Input('GL', 'value'),
+    dash.dependencies.Input('Bfstyle', 'value')]
+    )
+def update_graph(nel,gam, Xi, GLo,  bfs): 
+    if GLo != 10:
+        OmA = Ma.OmegaA(ns = nel, Gam = gam)
+        dfB = pd.DataFrame({'Omega': OmA})
+        # dfB['Omega'] = OmA
+    if bfs == 'Bf':
+        dfB['Bfield'] = Ma._B
+    else:
+         dfB['Bfield'] = 1/Ma._B
+    return {
+        'data': [dict(
+            x=dfB['Bfield'],
+            y=dfB['Omega'],
+           # text=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
+            #customdata=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
+            #mode='markers',
+            marker={
+                'size': 15,
+                'opacity': 0.5,
+                'line': {'width': 0.5, 'color': 'white'}
+            }
+        )]
+    }
+
+
+@app.callback(
+    dash.dependencies.Output('Granpot-graphC', 'figure'),
     [dash.dependencies.Input('gocal', 'value'),
     dash.dependencies.Input('nelec', 'value')])
 def update_graph2(val, nel): 
        
-    Om = np.zeros(np.shape(shape(M._B)[0]))
-    dfo = pd.DataFrame({'Bfield':M._B, 'GrandPotential': Om}) 
+    Om = np.zeros(np.shape(shape(Mc._B)[0]))
+    dfo = pd.DataFrame({'Bfield':Mc._B, 'GrandPotential': Om}) 
     if 'Go' in val : 
-        M.gESS(ns = nel)
-        Om = M.OmegaC()
-        dfo = pd.DataFrame({'Bfield':M._B, 'GrandPotential': Om})
+        # Mc.gESS(ns = nel)
+        Om = Mc.OmegaC()
+        dfo = pd.DataFrame({'Bfield':Mc._B, 'GrandPotential': Om})
     return {
         'data': [dict(
               x=dfo['Bfield'],
@@ -233,11 +268,11 @@ def update_graph2(val, nel):
     dash.dependencies.Output('Mag-graph', 'figure'),
     [dash.dependencies.Input('gocal2', 'value')])
 def update_graph3(val2): 
-    Mag = np.zeros(np.shape(M._B)[0]-1)
-    dfm = pd.DataFrame({'Bfield':M._B[:-1], 'Magnetization': Mag})
+    Mag = np.zeros(np.shape(Mc._B)[0]-1)
+    dfm = pd.DataFrame({'Bfield':Mc._B[:-1], 'Magnetization': Mag})
     if 'Go' in val2 :         
-        Mag = M.MagC()
-        dfm = pd.DataFrame({'Bfield':M._B[:-1], 'Magnetization': Mag})
+        Mag = Mc.MagC()
+        dfm = pd.DataFrame({'Bfield':Mc._B[:-1], 'Magnetization': Mag})
     return {
         'data': [dict(
               x=dfm['Bfield'],
