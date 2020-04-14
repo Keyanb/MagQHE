@@ -42,21 +42,6 @@ app.layout = html.Div(children=[
       html.Div(children='''
         Visualization to understand magnetization
     '''),
-     # html.Div([
-     #     html.Label(r'Chose the electron density of your 2DEG in $m^{-2}$:'),
-     #     dcc.Slider(
-     #         id='nelec',
-     #         min = 0,
-     #         max = 1e16,
-     #         marks={i: '{:.2E}'.format(i) for i in range(0,int(1e16),int(1e15))},
-     #         value= 3e15,
-     #         step = 1e14
-     #        )
-        # ]),
-    
-
-    
-    
     
     
       html.Div([
@@ -72,6 +57,16 @@ app.layout = html.Div(children=[
              marks={i: '{:.2E}'.format(i) for i in range(0,int(1e16),int(1e15))},
              value= 3e15,
              step = 1e14
+            ),
+        html.Label(r'disorder type'),
+        dcc.Dropdown(
+             id='GL',
+             options=[
+            {'label': 'Gaussian', 'value': '1'},
+            {'label': u'Lorentzian', 'value': '0'},          
+            ],
+            value='0'
+             
             ),
         html.Label(r'x axis'),
         dcc.Dropdown(
@@ -92,25 +87,17 @@ app.layout = html.Div(children=[
             min = 0.5,
             max = 40,
             value = 5,
-            marks = {i: '{:.2E}'.format(i) for i in range(0,50,5)},
+            marks = {i: '{}'.format(i) for i in range(0,50,5)},
             step = 1/10),
-        html.Label(r'Constant density broadening'),
+        html.Label(r'Constant density broadening %'),
         dcc.Slider(
             id = 'Xi',
             min = 0,
             max = 1,
             value = 0.1,
-            marks = {i: '{:.2E}'.format(i) for i in range(10)},
-            step = 1/50),
-         dcc.Dropdown(
-             id='GL',
-             options=[
-            {'label': 'Gaussian', 'value': '1'},
-            {'label': u'Lorentzian', 'value': '0'},          
-            ],
-            value='0'
-             
-            )
+            marks = {i: '{:.2E}'.format(i) for i in range(0,100,10)},
+            step = 1/50)
+         
         ], 
         style={'width': '48%', 'float': 'right', 'display': 'inline-block'}),
     

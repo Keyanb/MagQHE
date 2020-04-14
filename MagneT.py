@@ -254,21 +254,23 @@ class MagneT(object):
             integ_result[i], error = integrate.quad(integrand, 0, EF*10)
         return k.k*T * integ_result 
     
-    def Om2(self, B = None, mu = None, T = None, Gam = None, Xi = None, m = None, Nmax = None):
+    def OmegaA(self, B = None, ns = None, T = None, Gam = None, Xi = None, m = None, Nmax = None):
         """
         Return: analytical calculation of the Grand thermodynamic potential based on Fourrier decomposition without spin splitting
         """
-        if mu: self._mu = mu
+        if ns: self._ns = ns
         if Gam: self._Gam = Gam
         if T: self._T = T
         if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi
-        wc = k.e*B/m
+        self._mu = self._ns*pi*k.hbar**2/self._m
+        wc = k.e*self._B/self._m
         hwc = k.hbar*wc
-        n = arange(1,Nmax+1)[:, newaxis] # N,1 elements (N=Nmax+1)
+        n = arange(1,self._N+1)[:, newaxis] # N,1 elements (N=Nmax+1)
         I3 = -(self._mu**2/(2*k.k*self._T)+pi**2*k.k*self._T/6)
-        I4 = -(hwc)**2/(4*pi**2*n**2*k.k*self._T) + hwc/(2*n)*cos(2*pi*n*mu/hwc)/sinh(2*pi**2*n*k.k*self._T/hwc)
-        return m*k.k*self._T/(pi*k.hbar**2)*(I3+2*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*self._Gam)**2/(hwc)**2)*I4, axis=0))
+        I4 = -(hwc)**2/(4*pi**2*n**2*k.k*self._T) + hwc/(2*n)*cos(2*pi*n*self._mu/hwc)/sinh(2*pi**2*n*k.k*self._T/hwc)
+        self._Om =  self._m*k.k*self._T/(pi*k.hbar**2)*(I3+2*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*self._Gam)**2/(hwc)**2)*I4, axis=0))
+        return self._Om
 
     def OmegaC(self, B = None, T = None, mu = None, Gam = None, Xi = None, Nmax = None, Bs = None, GL = None , nE = None, alpha = 0):
         """
@@ -313,13 +315,13 @@ class MagneT(object):
         return self._Om 
    
 
-    def MagG( self, B = None, ns = None, mu = None, T = None, Gam = None, Xi = None,  p = None, Nmax = None, s = None, phi = 0):
+    def MagG( self, B = None, ns = None, T = None, Gam = None, Xi = None,  p = None, Nmax = None, s = None, phi = 0):
         """
         Return: the Magnetisation in QHE with Gaussian broadening without spin splitting
         calculated with the analytical expression based on the Fourier decomposition
         """
         if B: self._B = B
-        if mu: self._mu = mu
+        if ns: self._ns = ns
         if Gam: self._Gam = Gam
         if T: self._T = T
         if Nmax: self._N = Nmax
@@ -327,6 +329,7 @@ class MagneT(object):
         if ns: self._ns = ns
         if p: self._p = p
         if self._s_default: self._s_default = s
+        self._mu = self._ns*pi*k.hbar**2/self._m
         wc = k.e*self._B/self._m
         n = arange(1,self._N+1)[:, newaxis] # N,1 elements (N=Nmax+1)
         hwc = k.hbar*wc    
