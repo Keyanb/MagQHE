@@ -124,7 +124,7 @@ class MagneT(object):
                 return self._dos[0]
             return self._dos
     
-    def gEA(self,B = None, ns = None,  Gam = None , Xi = None, Nmax = None, Bs = None,  GL = None, alpha = 0, nis = 100):
+    def gEA(self,B = None, ns = None,  Gam = None , Xi = None,  GL = None, alpha = 0, nis = 100):
         """
         return: the density of state (analytically calculated with Fourrier transform)
         for LL  with Gaussian or Lorentzian Broadening
@@ -138,7 +138,6 @@ class MagneT(object):
         
         if B: self._B = B
         if Gam: self._Gam = Gam
-        if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi
         if ns: self._ns = ns
         if GL: self._GL = GL
@@ -162,7 +161,7 @@ class MagneT(object):
     
     
     
-    def gESS(self,B = None, ns = None,  Gam = None , Xi = None, Nmax = None, Bs = None, GL = None, alpha = 0, GL = 0):     
+    def gESS(self,B = None, ns = None,  Gam = None , Xi = None, Nmax = None, Bs = None, GL = None, nE = 1002, alpha = 0):     
         """
         return: the density of state for LL with spin splitted with Gaussian or Lorentzian Broadening
         B is a vector of M elements
@@ -183,7 +182,7 @@ class MagneT(object):
         if GL: self._GL = GL
         self._mu = self._ns*pi*k.hbar**2/self._m
         self._EF = self._ns*pi*k.hbar**2/self._m
-        self._E = linspace(0,2*self._mu,1002)[:, newaxis]
+        self._E = linspace(0,2*self._mu,nE)[:, newaxis]
         Bp = self._B*cos(alpha)
         Bt = self._B
         g0 = 0.44
@@ -310,7 +309,7 @@ class MagneT(object):
         return self._Om 
    
 
-    def Mag( self, B = None, ns = None, mu = None, T = None, Gam = None, Xi = None,  p = None, Nmax = None, s = None, phi = 0):
+    def MagG( self, B = None, ns = None, mu = None, T = None, Gam = None, Xi = None,  p = None, Nmax = None, s = None, phi = 0):
         """
         Return: the Magnetisation in QHE with Gaussian broadening without spin splitting
         calculated with the analytical expression based on the Fourier decomposition

@@ -24,9 +24,10 @@ B1 = linspace(0.125,1.5,2500)
 Bf = 1/B1
 NLL = 50
 M = MagneT.MagneT(density = ni, NLL = NLL, Bfield = Bf) 
+EF =  3.7e15*pi*k.hbar**2/M._m
 
 # Let's calculate the density of state:
-g = M.gESS(Bs = 2)
+# g = M.gESS(Bs = 2)
 
 
 # external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -46,10 +47,10 @@ app.layout = html.Div(children=[
          dcc.Slider(
              id='nelec',
              min = 0,
-             max = np.shape(g)[0],
-             marks={i: '{:.2E}'.format(i*ni/np.shape(g)[0]) for i in range(1, np.shape(g)[0], 100)},
+             max = 1e16,
+             marks={i: '{:.2E}'.format(i) for i in range(0,int(1e16),int(1e15))},
              value= 500,
-             step = 10
+             step = 1e14
             )
         ]),
      html.Div([
@@ -65,6 +66,38 @@ app.layout = html.Div(children=[
             )
         ]),
 
+    
+    
+    
+    
+    html.Div([
+        dcc.Graph(
+            id='vardens-graph'),
+        dcc.Slider(
+            id = 'gamma',
+            min = 1/200,
+            max = 1/2,
+            value = 1/15,
+            marks = {i: '{:.2E}'.format(i*EF*2) for i in range(10)},
+            step = 1/100),
+        dcc.Slider(
+            id = 'Xi',
+            min = 0,
+            max = 1,
+            value = 0.1,
+            marks = {i: '{:.2E}'.format(i*EF*2) for i in range(10)},
+            step = 1/50),
+         dcc.Dropdown(
+             id='GL',
+             options=[
+            {'label': 'Gaussian', 'value': '1'},
+            {'label': u'Lorentzian', 'value': '0'},          
+            ],
+            value='0'
+             
+            )
+        ]),
+    
     html.Div([
         dcc.Graph(
             id='density-graph'),
@@ -73,16 +106,16 @@ app.layout = html.Div(children=[
     html.Div([
     dcc.Input(
              id='Bsplit',             
-             value= '',
-             
+             value= 2,          
             )]),
+    
     html.Div([
         dcc.Checklist(
             id = 'gocal',
             options = [
                 {'label': 'Grand potential calculation (takes about 30s)', 'value': 'Go'}],
-            value = '')
-        ]),
+            value = '') ]),
+    
     html.Div([
         dcc.Graph(
             id='GranPot-graph'),
@@ -99,14 +132,50 @@ app.layout = html.Div(children=[
     ])
            
 
+
+
+@app.callback(
+    dash.dependencies.Output('vardens-graph', 'figure'),
+    [dash.dependencies.Input('nelec', 'value'),
+    dash.dependencies.Input('gamma', 'value'),
+    dash.dependencies.Input('Xi', 'value'),
+    dash.dependencies.Input('GL', 'value'),
+    dash.dependencies.Input('Bfstyle', 'value')]
+    )
+def update_graph(nel,gam, Xi, GLo, bfs): 
+    gEA = M.gEA(ns = nel, Gam = gam*EF, Xi = Xi, GL = int(GLo))
+    dfA = pd.DataFrame({'Bfield':M._B, 'DOSEF': gEA})
+    if bfs == 'Bf':
+        dfA['Bfield'] = M._B
+    else:
+         dfA['Bfield'] = 1/M._B
+    return {
+        'data': [dict(
+            x=dfA['Bfield'],
+            y=dfA['DOSEF'],
+           # text=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
+            #customdata=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
+            #mode='markers',
+            marker={
+                'size': 15,
+                'opacity': 0.5,
+                'line': {'width': 0.5, 'color': 'white'}
+            }
+        )]
+    }
+
 @app.callback(
     dash.dependencies.Output('density-graph', 'figure'),
     [dash.dependencies.Input('nelec', 'value'),
+    dash.dependencies.Input('gamma', 'value'),
+    dash.dependencies.Input('Xi', 'value'),
+    dash.dependencies.Input('GL', 'value'),
     dash.dependencies.Input('Bsplit', 'value'),
     dash.dependencies.Input('Bfstyle', 'value')]
     )
-def update_graph(nel,Bsp,bfs): 
-    df = pd.DataFrame({'Bfield':M._B, 'DOS': g[nel]})
+def update_graph(nel,gam, Xi, GLo, Bsp, bfs): 
+    g = M.gESS(Bs = Bsp,ns = nel, Gam = gam*EF, Xi = Xi, GL = int(GLo) )
+    df = pd.DataFrame({'Bfield':M._B, 'DOS': g[-1]})
     if bfs == 'Bf':
         df['Bfield'] = M._B
     else:
@@ -125,8 +194,6 @@ def update_graph(nel,Bsp,bfs):
             }
         )]
     }
-
-
 
 @app.callback(
     dash.dependencies.Output('GranPot-graph', 'figure'),
@@ -182,7 +249,7 @@ def update_graph3(val2):
 
 @app.callback(
     Output(component_id='my-div', component_property='children'),
-    [Input(component_id='nelec', component_property='value')]
+    [Input(component_id='GL', component_property='value')]
 )
 def update_output_div(input_value):
     return 'You\'ve entered "{}"'.format(input_value)
