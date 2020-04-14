@@ -30,6 +30,7 @@ class MagneT(object):
         self._B = kwarg['Bfield'] if 'Bfield' in kwarg else 1/B1[::-1]
         self._Bs = kwarg['Bsplit'] if 'Bsplit' in kwarg else 2
         self._GL = kwarg['broadening'] if 'broadening' in kwarg else 0
+        self._nE = kwarg['N_sum_E'] if 'N_sum_E' in kwarg else 1002
         
 
     def fd(self,E = None ,T = None, mu = None):
@@ -148,20 +149,21 @@ class MagneT(object):
         mub = k.e*k.hbar/(2*self._m)
         hwc = k.hbar*k.e*Bp/self._m     # M elements
         al = self._m/(pi*k.hbar**2)
+        l = sqrt(k.hbar/(k.e*Bp)) 
         Gam = self._Gam*self._B**self._p
         
         s = zeros((shape(self._B)[0],nis))
         for i in range(shape(self._B)[0]): s[i] = arange(nis)
         s = transpose(s)
         if GL == 1:        
-            self._dos = al*(1+2*(1-self._Xi)* sum((-1)**s*exp(-2*(s*pi*Gam)**2/hwc**2)*cos(2*s*pi*E/hwc), axis=0))
+            self._dos = al*self._Xi+2*(1-self._Xi) *al* sum((-1)**s*exp(-2*(s*pi*Gam)**2/hwc**2)*cos(2*s*pi*E/hwc), axis=0)
         else:
-            self._dos = al*(1+2*(1-self._Xi)* sum((-1)**s*exp(-2*(s*pi*Gam)/hwc)*cos(2*s*pi*E/hwc), axis=0))
+            self._dos = al*(self._Xi+2*(1-self._Xi)* sum((-1)**s*exp(-2*(s*pi*Gam)/hwc)*cos(2*s*pi*E/hwc), axis=0))
         return self._dos
     
     
     
-    def gESS(self,B = None, ns = None,  Gam = None , Xi = None, Nmax = None, Bs = None, GL = None, nE = 1002, alpha = 0):     
+    def gESS(self,B = None, ns = None,  Gam = None , Xi = None, Nmax = None, Bs = None, GL = None, nE = None, alpha = 0):     
         """
         return: the density of state for LL with spin splitted with Gaussian or Lorentzian Broadening
         B is a vector of M elements
@@ -180,9 +182,10 @@ class MagneT(object):
         if Xi: self._Xi = Xi
         if ns: self._ns = ns
         if GL: self._GL = GL
+        if nE: self._nE = nE
         self._mu = self._ns*pi*k.hbar**2/self._m
         self._EF = self._ns*pi*k.hbar**2/self._m
-        self._E = linspace(0,2*self._mu,nE)[:, newaxis]
+        self._E = linspace(0,2*self._mu,self._nE)[:, newaxis]
         Bp = self._B*cos(alpha)
         Bt = self._B
         g0 = 0.44
@@ -214,10 +217,10 @@ class MagneT(object):
                                                                  /(2*self._Gam**2)), axis=0)
         else:
             if self._Bs != 0:
-                self._dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)*1./(pi*l**2)/2 *(sum(self._Gam/((self._E-EnP)**2 + self._Gam**2), axis=0) +
+                self._dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)*1./(pi*l**2)/2*1/pi *(sum(self._Gam/((self._E-EnP)**2 + self._Gam**2), axis=0) +
                                         sum(self._Gam/((self._E-EnN)**2 + self._Gam**2), axis=0))
             else:
-                self._dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)*1./(pi*l**2) * sum(self._Gam/((self._E-En)**2 + self._Gam**2), axis=0)    
+                self._dos = self._Xi*self._m/(pi*k.hbar**2)+(1-self._Xi)*1./(pi*l**2)*1/pi * sum(self._Gam/((self._E-En)**2 + self._Gam**2), axis=0)    
         return self._dos
     
     
@@ -267,7 +270,7 @@ class MagneT(object):
         I4 = -(hwc)**2/(4*pi**2*n**2*k.k*self._T) + hwc/(2*n)*cos(2*pi*n*mu/hwc)/sinh(2*pi**2*n*k.k*self._T/hwc)
         return m*k.k*self._T/(pi*k.hbar**2)*(I3+2*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*self._Gam)**2/(hwc)**2)*I4, axis=0))
 
-    def OmegaC(self, B = None, T = None, mu = None, Gam = None, Xi = None, Nmax = None, Bs = None, GL = None , alpha = 0):
+    def OmegaC(self, B = None, T = None, mu = None, Gam = None, Xi = None, Nmax = None, Bs = None, GL = None , nE = None, alpha = 0):
         """
         Numeric calculation of the thermodynamic grand potential, 
         Bs is the field for spin splitting (if Bs = 0 no spin splitting )
@@ -280,10 +283,11 @@ class MagneT(object):
         if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi
         if GL: self._GL = GL
+        if nE: self._nE = nE
         if shape(self._mu) == ():
-            E = linspace(0,2*self._mu,1002)[:, newaxis]
+            E = linspace(0,2*self._mu,self._nE)[:, newaxis]
         else:
-            E = linspace(0,2*self._mu[0],1002)[:, newaxis]
+            E = linspace(0,2*self._mu[0],self._nE)[:, newaxis]
         bet = (self._mu-E)/(k.k*self._T)
         if shape(self._mu) == ():
             for n in range(shape(E)[0]):
