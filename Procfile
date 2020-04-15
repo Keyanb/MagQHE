@@ -1,2 +1,2 @@
 
-web: gunicorn PedaViz:server
+web: gunicorn app:server
