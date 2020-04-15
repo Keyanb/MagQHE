@@ -21,7 +21,7 @@ class MagneT(object):
         self._p = kwarg['power'] if 'power' in kwarg else 0
         self._N = kwarg['NLL'] if 'NLL' in kwarg else 100
         self._ns = kwarg['density'] if 'density' in kwarg else 2.75e15*0.99
-        # self._mu = self._ns*pi*k.hbar**2/self._m
+        self._mu = self._ns*pi*k.hbar**2/self._m
         self._EF = self._ns*pi*k.hbar**2/self._m
         # self._E = linspace(0,2*self._mu,1002)[:, newaxis]
         self._Gam = kwarg['Gamma'] if 'Gamma' in kwarg else self._EF/15
@@ -254,7 +254,7 @@ class MagneT(object):
             integ_result[i], error = integrate.quad(integrand, 0, EF*10)
         return k.k*T * integ_result 
     
-    def OmegaA(self, B = None, ns = None, T = None, Gam = None, Xi = None, m = None, Nmax = None):
+    def OmegaA(self, B = None, ns = None, T = None, Gam = None, Xi = None, m = None, Nmax = None, GL = None):
         """
         Return: analytical calculation of the Grand thermodynamic potential based on Fourrier decomposition without spin splitting
         """
@@ -263,16 +263,22 @@ class MagneT(object):
         if T: self._T = T
         if Nmax: self._N = Nmax
         if Xi: self._Xi = Xi
+        if GL: self._GL = GL
         self._mu = self._ns*pi*k.hbar**2/self._m
         wc = k.e*self._B/self._m
         hwc = k.hbar*wc
         n = arange(1,self._N+1)[:, newaxis] # N,1 elements (N=Nmax+1)
         I3 = -(self._mu**2/(2*k.k*self._T)+pi**2*k.k*self._T/6)
         I4 = -(hwc)**2/(4*pi**2*n**2*k.k*self._T) + hwc/(2*n)*cos(2*pi*n*self._mu/hwc)/sinh(2*pi**2*n*k.k*self._T/hwc)
-        self._Om =  self._m*k.k*self._T/(pi*k.hbar**2)*(I3+2*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*self._Gam)**2/(hwc)**2)*I4, axis=0))
+        if self._GL == 0:
+            self._Om =  self._m*k.k*self._T/(pi*k.hbar**2)*(I3+2
+                                                        *(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*self._Gam)/(hwc))*I4, axis=0))
+        else:
+            self._Om =  self._m*k.k*self._T/(pi*k.hbar**2)*(I3+2
+                                                        *(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*self._Gam)**2/(hwc)**2)*I4, axis=0))
         return self._Om
 
-    def OmegaC(self, B = None, T = None, mu = None, Gam = None, Xi = None, Nmax = None, Bs = None, GL = None , nE = None, alpha = 0):
+    def OmegaC(self, B = None, T = None, mu = None, ns =None, Gam = None, Xi = None, Nmax = None, Bs = None, GL = None , nE = None, alpha = 0):
         """
         Numeric calculation of the thermodynamic grand potential, 
         Bs is the field for spin splitting (if Bs = 0 no spin splitting )
@@ -287,6 +293,7 @@ class MagneT(object):
         if GL: self._GL = GL
         if nE: self._nE = nE
         if shape(self._mu) == ():
+            self._mu = self._ns*pi*k.hbar**2/self._m
             E = linspace(0,2*self._mu,self._nE)[:, newaxis]
         else:
             E = linspace(0,2*self._mu[0],self._nE)[:, newaxis]
@@ -313,34 +320,8 @@ class MagneT(object):
         S = sum(Z, axis = 0)
         self._Om = -S*(max(E)-min(E))/shape(E)[0]*k.k*self._T
         return self._Om 
-   
 
-    def MagG( self, B = None, ns = None, T = None, Gam = None, Xi = None,  p = None, Nmax = None, s = None, phi = 0):
-        """
-        Return: the Magnetisation in QHE with Gaussian broadening without spin splitting
-        calculated with the analytical expression based on the Fourier decomposition
-        """
-        if B: self._B = B
-        if ns: self._ns = ns
-        if Gam: self._Gam = Gam
-        if T: self._T = T
-        if Nmax: self._N = Nmax
-        if Xi: self._Xi = Xi
-        if ns: self._ns = ns
-        if p: self._p = p
-        if self._s_default: self._s_default = s
-        self._mu = self._ns*pi*k.hbar**2/self._m
-        wc = k.e*self._B/self._m
-        n = arange(1,self._N+1)[:, newaxis] # N,1 elements (N=Nmax+1)
-        hwc = k.hbar*wc    
-        smu = 2*pi*n*self._mu/(hwc) + phi*2*pi*n #2nd term is a Berry phase 
-        skt = 2*pi**2*n*k.k*self._T/(hwc)
-        Gam = self._Gam*self._B**self._p
-        I4 =  -(hwc)**2/(4*pi**2*n**2*k.k*self._T) + hwc/(2*n)*cos(smu)/sinh(2*pi**2*n*k.k*self._T/hwc)
-        DI4 =  1/self._B*(-hwc**2/(2*pi**2*n**2*k.k*self._T)+pi*self._mu*sin(smu)/sinh(skt)+cos(smu)/sinh(skt)*(hwc/(2*n)+pi**2*k.k*self._T*1/tanh(skt)))   
-        return -2*self._m*k.k*self._T/(pi*k.hbar**2)*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)**2/(hwc)**2)*(DI4+(1-self._p)*(2*pi*n*Gam/hwc)**2*I4/self._B), axis=0)
-
-    def MagL(self, B = None, ns = None, mu = None, T = None, Gam = None, Xi = None, p = None, Nmax = None, s = None, phi = 0):
+    def MagA(self, B = None, ns = None, mu = None, T = None, Gam = None, Xi = None, GL = None, p = None, Nmax = None, s = None, phi = 0):
         """
         Return: the Magnetisation in QHE with Lorentzian broadening without spin splitting
         calculated by the analytical expression based on the Fourier decomposition
@@ -352,6 +333,7 @@ class MagneT(object):
         if Nmax: self._N = Nmax
         if ns: self._ns = ns
         if p: self._p = p
+        if GL: self._GL = GL
         if self._s_default: self._s_default = s
         wc = k.e*self._B/self._m
         n = arange(1,self._N+1)[:, newaxis] # N,1 elements (N=Nmax+1)
@@ -361,7 +343,12 @@ class MagneT(object):
         Gam = self._Gam*self._B**self._p
         I4 =  -(hwc)**2/(4*pi**2*n**2*k.k*self._T) + hwc/(2*n)*cos(smu)/sinh(2*pi**2*n*k.k*self._T/hwc)
         DI4 =  1/self._B*(-hwc**2/(2*pi**2*n**2*k.k*self._T)+pi*self._mu*sin(smu)/sinh(skt)+cos(smu)/sinh(skt)*(hwc/(2*n)+pi**2*k.k*self._T*1/tanh(skt)))   
-        return -2*m*k.k*self._T/(pi*k.hbar**2)*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)/(hwc))*(DI4+(1-self._p)*(2*pi*n*Gam/hwc)*I4/self._B), axis=0)
+        if GL == 1:
+            self._Mag = -2*self._m*k.k*self._T/(pi*k.hbar**2)*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)**2/(hwc)**2)*(DI4+(1-self._p)*(2*pi*n*Gam/hwc)**2*I4/self._B), axis=0)
+        else:    
+            self._Mag = -2*self._m*k.k*self._T/(pi*k.hbar**2)*(1-self._Xi)*sum((-1)**n*exp(-2*(n*pi*Gam)/(hwc))*(DI4+(1-self._p)*(2*pi*n*Gam/hwc)*I4/self._B), axis=0)
+        return self._Mag
+   
 
     def MagC(self,  Om = None, B = None):
         """
