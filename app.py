@@ -280,6 +280,6 @@ def update_output_div(input_value):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=False)
+    app.run_server(debug=True)
     
     
