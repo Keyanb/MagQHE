@@ -4,6 +4,7 @@ Created on Mon Apr  6 14:46:13 2020
 
 @author: USER
 """
+import os
 
 import numpy as np
 from pylab import *
@@ -19,6 +20,12 @@ import dash_html_components as html
 from dash.dependencies import Input, Output
 import dash_bootstrap_components as dbc
 
+# external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+external_stylesheets=[dbc.themes.BOOTSTRAP]
+
+server = PedaViz.server
+
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 B1 = linspace(0.125,1.5,2500)
 Bf = 1/B1
@@ -26,28 +33,24 @@ NLL = 50
 Ma = MagneT.MagneT( NLL = NLL, Bfield = Bf, N_sum_E = 500) 
 Mc = MagneT.MagneT( NLL = NLL, Bfield = Bf, N_sum_E = 500) 
 dfA = pd.DataFrame({'Bfield':Bf})
-# Let's calculate the density of state:
-# g = M.gESS(Bs = 2)
 
 
-# external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-external_stylesheets=[dbc.themes.BOOTSTRAP]
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 available_indicators = ['Grand potential','Magnetization']
 
 app.layout = html.Div(children=[
     html.H1(children='Magnetization in Quantum Hall regime'),
       html.Div(children='''
-        Visualization to understand magnetization
+        App to calculate step by step magnetization in Quantum Hall regime
     '''),
-    
+      html.Label(r'Choose the type of calcluation you want. Note that anlytical calculation are only for'
+                 'the spin degenerate case. Numerical calculation can take few second. Both can be selected'),
       dcc.Checklist(
           id='calc',
           options=[
             {'label': 'Analytical calculation  ', 'value': 'an'},
-            {'label': 'Numérical calculation', 'value': 'nu'}],
+            {'label': 'Numerical calculation', 'value': 'nu'}],
           value='an'),
            
       html.Div([
@@ -64,7 +67,7 @@ app.layout = html.Div(children=[
              value= 3e15,
              step = 1e14
             ),
-        html.Label(r'disorder type'),
+        html.Label(r'Disorder type'),
         dcc.Dropdown(
              id='GL',
              options=[
@@ -126,7 +129,7 @@ app.layout = html.Div(children=[
         dcc.Checklist(
             id = 'gocal',
             options = [
-                {'label': 'Grand potential calculation (takes few seconds)', 'value': 'Go'}],
+                {'label': 'Start thermodynamic grand potential calculation ', 'value': 'Go'}],
             value = '') ]),
     
     html.Div([
@@ -137,7 +140,7 @@ app.layout = html.Div(children=[
         dcc.Checklist(
             id = 'gocal2',
             options = [
-                {'label': 'Mag Calculation', 'value': 'Go'}],
+                {'label': 'Start Magnetization Calculation (only after grand potential has been calculated)', 'value': 'Go'}],
             value = ''),
         dcc.Graph(
             id='Mag-graph')]),
@@ -146,8 +149,6 @@ app.layout = html.Div(children=[
         
     ])
            
-
-
 
 @app.callback(
     dash.dependencies.Output('vardens-graph', 'figure'),
@@ -161,7 +162,6 @@ app.layout = html.Div(children=[
     )
 def update_graph(nel,gam, Xi, GLo, cal, bsp, bfs): 
     gEA = Ma.gEA(ns = nel, Gam = gam*k.k, Xi = float(Xi), GL = int(GLo))
-    # dfA = pd.DataFrame({'Bfield':Ma._B, 'DOSA': gEA})
     dfA['DOSA'] =  gEA
     ca = []
     if isin('an', cal):
@@ -178,8 +178,7 @@ def update_graph(nel,gam, Xi, GLo, cal, bsp, bfs):
         'data': [dict(
                 x=dfA['Bfield'],
                 y=dfA[i],
-                # x=dfA['Bfield'],
-                # y=dfA['DOSEF'],
+               
            # text=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
             #customdata=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
             #mode='markers',
@@ -188,23 +187,23 @@ def update_graph(nel,gam, Xi, GLo, cal, bsp, bfs):
                 'opacity': 0.5,
                 'line': {'width': 0.5, 'color': 'white'}
             }
-        ) for i in ca ]
+        ) for i in ca ],
+        'layout': dict(
+            xaxis={'title': 'field'},
+            yaxis={'title': 'DOS'},
+            margin={'l': 100, 'b': 40, 't': 10, 'r': 0},
+            hovermode='closest')
     }
 
 
 
 @app.callback(
     dash.dependencies.Output('GranPot-graph', 'figure'),
-    [dash.dependencies.Input('nelec', 'value'),
-    dash.dependencies.Input('gamma', 'value'),
-    dash.dependencies.Input('Xi', 'value'),
-    dash.dependencies.Input('GL', 'value'),
-    dash.dependencies.Input('calc', 'value'),
-    dash.dependencies.Input('Bsplit', 'value'),
+    [dash.dependencies.Input('calc', 'value'),
     dash.dependencies.Input('Bfstyle', 'value'),
     dash.dependencies.Input('gocal', 'value')]
     )
-def update_graph2(nel,gam, Xi, GLo,cal, bsp,  bfs, val): 
+def update_graph2(cal,  bfs, val): 
     co = []
     if 'Go' in val : 
         if isin('an', cal):     
@@ -236,47 +235,12 @@ def update_graph2(nel,gam, Xi, GLo,cal, bsp,  bfs, val):
     }
 
 
-# @app.callback(
-#     dash.dependencies.Output('Granpot-graphC', 'figure'),
-#     [dash.dependencies.Input('gocal', 'value'),
-#     dash.dependencies.Input('nelec', 'value')])
-# def update_graph2(val, nel): 
-       
-#     Om = np.zeros(np.shape(shape(Mc._B)[0]))
-#     dfo = pd.DataFrame({'Bfield':Mc._B, 'GrandPotential': Om}) 
-#     if 'Go' in val : 
-#         # Mc.gESS(ns = nel)
-#         Om = Mc.OmegaC()
-#         dfo = pd.DataFrame({'Bfield':Mc._B, 'GrandPotential': Om})
-#     return {
-#         'data': [dict(
-#               x=dfo['Bfield'],
-#               y=dfo['GrandPotential'],
-#               text= 'Density',
-#                 #customdata=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
-#                 #mode='markers',
-#               marker={
-#                   'size': 15,
-#                   'opacity': 0.5,
-#                   'line': {'width': 0.5, 'color': 'white'}
-#             }
-#         )]
-#     }
-
 @app.callback(
     dash.dependencies.Output('Mag-graph', 'figure'),
-     [dash.dependencies.Input('nelec', 'value'),
-    dash.dependencies.Input('gamma', 'value'),
-    dash.dependencies.Input('Xi', 'value'),
-    dash.dependencies.Input('GL', 'value'),
-    dash.dependencies.Input('calc', 'value'),
-    dash.dependencies.Input('Bsplit', 'value'),
+    [dash.dependencies.Input('calc', 'value'),  
     dash.dependencies.Input('Bfstyle', 'value'),
     dash.dependencies.Input('gocal2', 'value')])
-def update_graph3(nel, gam, Xi, GLo, cal, bsp,  bfs, val2): 
-    Mag = np.zeros(np.shape(Mc._B)[0])
-    dfA['MagnetizationA']  = Mag
-    dfA['MagnetizationC']  = Mag
+def update_graph3(cal,  bfs, val2): 
     cm = []
     if 'Go' in val2 : 
         if isin('an', cal):
@@ -288,6 +252,10 @@ def update_graph3(nel, gam, Xi, GLo, cal, bsp,  bfs, val2):
             MagC = np.append(MagC,MagC[-1])
             dfA['MagnetizationC']  = MagC
             cm.append('MagnetizationC')
+        if bfs == 'Bf':
+            dfA['Bfield'] = Ma._B
+        else:
+            dfA['Bfield'] = 1/Ma._B
     return {
         'data': [dict(
               x=dfA['Bfield'],
