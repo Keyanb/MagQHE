@@ -26,12 +26,13 @@ external_stylesheets=[dbc.themes.BOOTSTRAP]
 # server = app.server
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+server = app.server
 
-B1 = linspace(0.125,1.5,2500)
+B1 = linspace(0.125,1.5,1500)
 Bf = 1/B1
 NLL = 50
-Ma = MagneT.MagneT( NLL = NLL, Bfield = Bf, N_sum_E = 500) 
-Mc = MagneT.MagneT( NLL = NLL, Bfield = Bf, N_sum_E = 500) 
+Ma = MagneT.MagneT( NLL = NLL, Bfield = Bf, N_sum_E = 200) 
+Mc = MagneT.MagneT( NLL = NLL, Bfield = Bf, N_sum_E = 200) 
 dfA = pd.DataFrame({'Bfield':Bf})
 
 
