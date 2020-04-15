@@ -23,9 +23,10 @@ from dash.dependencies import Input, Output
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 # external_stylesheets=[dbc.themes.BOOTSTRAP]
 
-server = app.server
+
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+server = app.server
 
 B1 = linspace(0.125,1.5,2500)
 Bf = 1/B1
