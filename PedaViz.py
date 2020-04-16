@@ -18,6 +18,7 @@ from scipy import constants as k
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
+from dash.exceptions import PreventUpdate
 from dash.dependencies import Input, Output
 import dash_bootstrap_components as dbc
 
@@ -298,6 +299,8 @@ def update_graph2(cal, bfs, val):
         else:
             dfA["Bfield"] = 1 / Ma._B
             fi = "1/B(1/Tesla)"
+    else:
+        raise PreventUpdate
     return {
         "data": [
             dict(
@@ -329,8 +332,9 @@ def update_graph2(cal, bfs, val):
         dash.dependencies.Input("Bfstyle", "value"),
         dash.dependencies.Input("gocal2", "value"),
     ],
+    [dash.dependencies.State("Mag-graph", "figure")]
 )
-def update_graph3(cal, bfs, val2):
+def update_graph3(cal, bfs, val2, fig):
     cm = []
     if "Go" in val2:
         if isin("an", cal):
@@ -348,29 +352,30 @@ def update_graph3(cal, bfs, val2):
         else:
             dfA["Bfield"] = 1 / Ma._B
             fi = "1/B(1/Tesla)"
-    return {
-        "data": [
-            dict(
-                x=dfA["Bfield"],
-                y=dfA[i],
-                # text=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
-                # customdata=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
-                # mode='markers',
-                marker={
-                    "size": 15,
-                    "opacity": 0.5,
-                    "line": {"width": 0.5, "color": "white"},
-                },
-            )
-            for i in cm
-        ],
-        "layout": dict(
-            xaxis={"title": fi},
-            yaxis={"title": "Magnetization"},
-            margin={"l": 100, "b": 40, "t": 10, "r": 0},
-            hovermode="closest",
-        ),
-    }
+
+        fig.update({
+            "data": [
+                dict(
+                    x=dfA["Bfield"],
+                    y=dfA[i],
+                    # text=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
+                    # customdata=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
+                    # mode='markers',
+                    marker={
+                        "size": 15,
+                        "opacity": 0.5,
+                        "line": {"width": 0.5, "color": "white"},
+                    },
+                )
+                for i in cm
+            ],
+            "layout": dict(
+                xaxis={"title": fi},
+                yaxis={"title": "Magnetization"},
+            ),
+        })
+
+    return fig
 
 
 # @app.callback(
