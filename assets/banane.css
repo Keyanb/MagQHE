@@ -1,0 +1,19 @@
+
+.grid-x div {
+    border-width: 1px;
+    border-color: red;
+    border-radius: 5px;
+    border-style: solid;
+}
+
+#calc label{
+    color: blue;
+}
+
+.checklist label{
+    color: red;
+}
+
+.orange label{
+    font-weigth: 700;
+}

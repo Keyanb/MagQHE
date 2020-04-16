@@ -60,6 +60,30 @@ Ma = MagneT.MagneT(NLL=NLL, Bfield=Bf, N_sum_E=150)
 Mc = MagneT.MagneT(NLL=NLL, Bfield=Bf, N_sum_E=300)
 dfA = pd.DataFrame({"Bfield": Bf})
 
+#
+#
+
+app.index_string = '''
+<!DOCTYPE html>
+<html>
+    <head>
+        {%metas%}
+        <title>{%title%}</title>
+        {%favicon%}
+        {%css%}
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+            
+        </footer>
+    </body>
+</html>
+'''
+
 
 available_indicators = ["Grand potential", "Magnetization"]
 
@@ -80,6 +104,7 @@ app.layout = html.Div(
         ),
         dcc.Checklist(
             id="calc",
+            className="checklist orange",
             options=[
                 {"label": "Analytical calculation  ", "value": "an"},
                 {"label": "Numerical calculation", "value": "nu"},
@@ -188,6 +213,7 @@ app.layout = html.Div(
             [
                 dcc.Checklist(
                     id="gocal",
+                    className="checklist",
                     options=[
                         {
                             "label": "Start thermodynamic grand potential calculation ",
@@ -205,6 +231,7 @@ app.layout = html.Div(
                 #     id = 'Granpot-graphC'),
                 dcc.Checklist(
                     id="gocal2",
+                    className="checklist",
                     options=[
                         {
                             "label": "Start Magnetization Calculation (only after grand potential has been calculated)",
