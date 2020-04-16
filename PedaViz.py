@@ -55,77 +55,101 @@ available_indicators = ['Grand potential','Magnetization']
 
 app.layout = html.Div(children=[
     html.H1(children='Magnetization in Quantum Hall regime'),
-      html.Div(children='''
+    html.Div(children='''
         App to calculate magnetization in Quantum Hall regime
     '''),
-      html.Label(r'The source code of the app and function to perform calculation is available on Git: https://github.com/Keyanb/MagQHE'),
-      html.Label(r'Choose the type of calcluation you want. Note that anlytical calculation are only for'
-                 'the spin degenerate case. Numerical calculation can take few second. Both can be selected'),
-     
-      dcc.Checklist(
-          id='calc',
-          options=[
+    html.Label(r'The source code of the app and function to perform calculation is available on Git: https://github.com/Keyanb/MagQHE'),
+    html.Label(r'Choose the type of calcluation you want. Note that anlytical calculation are only for'
+               'the spin degenerate case. Numerical calculation can take few second. Both can be selected'),
+
+    dcc.Checklist(
+        id='calc',
+        options=[
             {'label': 'Analytical calculation  ', 'value': 'an'},
-            {'label': 'Numerical calculation', 'value': 'nu'}],
-          value='an'),
-           
-      html.Div([
-       dcc.Graph(
-            id='vardens-graph')]),
-    
-    html.Div([
-        html.Label(r'Chose the electron density of your 2DEG in $m^{-2}$:'),
-         dcc.Slider(
-             id='nelec',
-             min = 0,
-             max = 1e16,
-             marks={i: '{:.1E}'.format(i) for i in range(0,int(1e16),int(1e15))},
-             value= 3e15,
-             step = 1e14
+            {'label': 'Numerical calculation', 'value': 'nu'}
+        ],
+        value=['an']
+    ),
+
+    html.Div([dcc.Graph(id='vardens-graph')]),
+
+    html.Div(
+        className="grid-x",
+        children=[
+            html.Div(
+                className="cell small-12 medium-6",
+                children=[
+                    html.Label(r'Chose the electron density of your 2DEG in $m^{-2}$:'),
+                    dcc.Slider(
+                        id='nelec',
+                        min = 0,
+                        max = 1e16,
+                        marks={i: '{:.1E}'.format(i) for i in range(0,int(1e16),int(1e15))},
+                        value= 3e15,
+                        step = 1e14
+                    )
+                ]
             ),
-        html.Label(r'Disorder type'),
-        dcc.Dropdown(
-             id='GL',
-             options=[
-            {'label': 'Gaussian', 'value': '1'},
-            {'label': u'Lorentzian', 'value': '0'},          
-            ],
-            value='0'
-             
+            html.Div(
+                className="cell small-12 medium-6",
+                children=[
+                    html.Label(r'Disorder type'),
+                    dcc.Dropdown(
+                        id='GL',
+                        options=[
+                            {'label': 'Gaussian', 'value': '1'},
+                            {'label': u'Lorentzian', 'value': '0'},
+                        ],
+                        value='0'
+
+                    ),
+                ]
             ),
-        html.Label(r'x axis:'),
-        dcc.RadioItems(
-            id='Bfstyle',
-             options=[
-            {'label': 'Magnetic field  ', 'value': 'Bf'},
-            {'label': u'inverse magnetic field', 'value': 'B1f'},          
-            ],
-            value='Bf'
-             
-            )
-        ], style={'width': '48%',  'display': 'inline-block'}),
-    
-    html.Div([    
-        html.Label(r'Energy broadening of Landau levels by disorder in Kelvin'),
-        dcc.Slider(         
-            id = 'gamma',
-            min = 0.5,
-            max = 40,
-            value = 5,
-            marks = {i: '{}'.format(i) for i in range(0,50,5)},
-            step = 1/10),
-        html.Label(r'Constant density broadening %'),
-        dcc.Slider(
-            id = 'Xi',
-            min = 0,
-            max = 1,
-            value = 0.1,
-            marks = {i: '{:.2E}'.format(i) for i in range(0,100,10)},
-            step = 1/50)
-         
-        ], 
-        style={'width': '48%', 'float': 'right', 'display': 'inline-block'}),
-    
+            html.Div(
+                className="cell small-12 medium-6",
+                children=[
+                    html.Label(r'x axis:'),
+                    dcc.RadioItems(
+                        id='Bfstyle',
+                        options=[
+                            {'label': 'Magnetic field  ', 'value': 'Bf'},
+                            {'label': u'inverse magnetic field', 'value': 'B1f'},
+                        ],
+                        value='Bf'
+
+                    )
+                ]
+            ),
+            html.Div(
+                className="cell small-12 medium-6",
+                children=[
+                    html.Label(r'Energy broadening of Landau levels by disorder in Kelvin'),
+                    dcc.Slider(
+                        id='gamma',
+                        min=0.5,
+                        max=40,
+                        value=5,
+                        marks={i: '{}'.format(i) for i in range(0, 50, 5)},
+                        step=1 / 10),
+                ]
+            ),
+            html.Div(
+                className="cell small-12 medium-6",
+                children=[
+                    html.Label(r'Constant density broadening %'),
+                    dcc.Slider(
+                        id='Xi',
+                        min=0,
+                        max=1,
+                        value=0.1,
+                        marks={i: '{:.2E}'.format(i) for i in range(0, 100, 10)},
+                        step=1 / 50)
+                ]
+            ),
+        ]
+    ),
+
+
     # html.Div([
     #     html.Label(r'Density of state calculated numerically (allow spin splitting'),
     #     dcc.Graph(
