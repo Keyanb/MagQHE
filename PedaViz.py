@@ -8,6 +8,7 @@ import os
 
 import numpy as np
 from pylab import *
+import plotly.graph_objs as go
 import matplotlib.pyplot as plt
 import MagneT
 import pandas as pd
@@ -44,6 +45,12 @@ app = dash.Dash(
 )
 server = app.server
 
+
+figure_layout = dict(
+
+    margin={"l": 100, "b": 40, "t": 10, "r": 0},
+    hovermode="closest",
+)
 
 B1 = linspace(0.125, 1, 1000)
 Bf = 1 / B1
@@ -205,7 +212,7 @@ app.layout = html.Div(
                     ],
                     value=[],
                 ),
-                dcc.Graph(id="Mag-graph"),
+                dcc.Graph(id="Mag-graph", figure=go.Figure(data=[], layout=figure_layout)),
             ]
         )
         # html.Div([
@@ -261,8 +268,6 @@ def update_graph(nel, gam, Xi, GLo, cal, bsp, bfs):
         "layout": dict(
             xaxis={"title": fi},
             yaxis={"title": "DOS"},
-            margin={"l": 100, "b": 40, "t": 10, "r": 0},
-            hovermode="closest",
         ),
     }
 
@@ -273,7 +278,7 @@ def update_graph(nel, gam, Xi, GLo, cal, bsp, bfs):
         dash.dependencies.Input("calc", "value"),
         dash.dependencies.Input("Bfstyle", "value"),
         dash.dependencies.Input("gocal", "value"),
-    ],
+    ]
 )
 def update_graph2(cal, bfs, val):
     co = []
@@ -312,8 +317,7 @@ def update_graph2(cal, bfs, val):
         "layout": dict(
             xaxis={"title": fi},
             yaxis={"title": "Grand Thermodynamic Potential"},
-            margin={"l": 100, "b": 40, "t": 10, "r": 0},
-            hovermode="closest",
+            **figure_layout
         ),
     }
 
