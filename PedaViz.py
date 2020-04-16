@@ -20,12 +20,25 @@ import dash_html_components as html
 from dash.dependencies import Input, Output
 import dash_bootstrap_components as dbc
 
-# external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-external_stylesheets=[dbc.themes.BOOTSTRAP]
+external_scripts = [
+    {
+        'src': 'https://cdnjs.cloudflare.com/ajax/libs/foundation/6.6.3/js/foundation.min.js',
+        'integrity': 'sha256-pRF3zifJRA9jXGv++b06qwtSqX1byFQOLjqa2PTEb2o=',
+        'crossorigin': 'anonymous'
+    }
+]
 
-# server = app.server
+external_stylesheets = [
+    {
+        'href': 'https://cdnjs.cloudflare.com/ajax/libs/foundation/6.6.3/css/foundation.min.css',
+        'rel': 'stylesheet',
+        'integrity': 'sha256-ogmFxjqiTMnZhxCqVmcqTvjfe1Y/ec4WaRj/aQPvn+I',
+        'crossorigin': 'anonymous'
+    }
+]
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+app = dash.Dash(__name__, external_scripts=external_scripts,
+                 external_stylesheets=external_stylesheets)
 server = app.server
 
 B1 = linspace(0.125,1,1000)
