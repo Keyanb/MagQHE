@@ -229,16 +229,10 @@ app.layout = html.Div(
                 dcc.Graph(id="GranPot-graph"),
                 # dcc.Graph(
                 #     id = 'Granpot-graphC'),
-                dcc.Checklist(
+                html.Button(
                     id="gocal2",
                     className="checklist",
-                    options=[
-                        {
-                            "label": "Start Magnetization Calculation (only after grand potential has been calculated)",
-                            "value": "Go",
-                        }
-                    ],
-                    value=[],
+                    children="Start Magnetization Calculation (only after grand potential has been calculated)"
                 ),
                 dcc.Graph(id="Mag-graph", figure=go.Figure(data=[], layout=figure_layout)),
             ]
@@ -305,12 +299,12 @@ def update_graph(nel, gam, Xi, GLo, cal, bsp, bfs):
     [
         dash.dependencies.Input("calc", "value"),
         dash.dependencies.Input("Bfstyle", "value"),
-        dash.dependencies.Input("gocal", "value"),
+        dash.dependencies.Input("gocal", "n_clicks"),
     ]
 )
-def update_graph2(cal, bfs, val):
+def update_graph2(cal, bfs, n_click):
     co = []
-    if "Go" in val:
+    if n_click is not None:
         if isin("an", cal):
             OmA = Ma.OmegaA()
             # dfA = pd.DataFrame({'OmegaA': OmA})
@@ -357,13 +351,20 @@ def update_graph2(cal, bfs, val):
     [
         dash.dependencies.Input("calc", "value"),
         dash.dependencies.Input("Bfstyle", "value"),
-        dash.dependencies.Input("gocal2", "value"),
+        dash.dependencies.Input("gocal2", "n_clicks"),
     ],
     [dash.dependencies.State("Mag-graph", "figure")]
 )
-def update_graph3(cal, bfs, val2, fig):
+def update_graph3(cal, bfs, n_click, fig):
+    ctx = dash.callback_context
+    if ctx.triggered:
+        prop_id = ctx.triggered[0]['prop_id']
+        print(prop_id)
+
+
+
     cm = []
-    if "Go" in val2:
+    if n_click is not None:
         if isin("an", cal):
             MagA = Ma.MagA()
             dfA["MagnetizationA"] = MagA
@@ -398,7 +399,7 @@ def update_graph3(cal, bfs, val2, fig):
             ],
             "layout": dict(
                 xaxis={"title": fi},
-                yaxis={"title": "Magnetization"},
+                yaxis={"title": r"$d, r \text{ (solar radius)}$"},
             ),
         })
 
