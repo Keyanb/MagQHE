@@ -28,11 +28,11 @@ external_stylesheets=[dbc.themes.BOOTSTRAP]
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 server = app.server
 
-B1 = linspace(0.125,1.5,1500)
+B1 = linspace(0.125,1,1000)
 Bf = 1/B1
-NLL = 50
-Ma = MagneT.MagneT( NLL = NLL, Bfield = Bf, N_sum_E = 200) 
-Mc = MagneT.MagneT( NLL = NLL, Bfield = Bf, N_sum_E = 200) 
+NLL = 30
+Ma = MagneT.MagneT( NLL = NLL, Bfield = Bf, N_sum_E = 150) 
+Mc = MagneT.MagneT( NLL = NLL, Bfield = Bf, N_sum_E = 300) 
 dfA = pd.DataFrame({'Bfield':Bf})
 
 
@@ -43,10 +43,12 @@ available_indicators = ['Grand potential','Magnetization']
 app.layout = html.Div(children=[
     html.H1(children='Magnetization in Quantum Hall regime'),
       html.Div(children='''
-        App to calculate step by step magnetization in Quantum Hall regime
+        App to calculate magnetization in Quantum Hall regime
     '''),
+      html.Label(r'The source code of the app and function to perform calculation is available on Git: https://github.com/Keyanb/MagQHE'),
       html.Label(r'Choose the type of calcluation you want. Note that anlytical calculation are only for'
                  'the spin degenerate case. Numerical calculation can take few second. Both can be selected'),
+     
       dcc.Checklist(
           id='calc',
           options=[
@@ -144,9 +146,9 @@ app.layout = html.Div(children=[
                 {'label': 'Start Magnetization Calculation (only after grand potential has been calculated)', 'value': 'Go'}],
             value = ''),
         dcc.Graph(
-            id='Mag-graph')]),
-    html.Div([
-        html.Div(id='my-div') ])
+            id='Mag-graph')])
+    # html.Div([
+    #     html.Div(id='my-div') ])
         
     ])
            
@@ -173,8 +175,10 @@ def update_graph(nel,gam, Xi, GLo, cal, bsp, bfs):
         ca.append('DOSC')
     if bfs == 'Bf':
         dfA['Bfield'] = Ma._B
+        fi ='B(Tesla)'
     else:
-         dfA['Bfield'] = 1/Ma._B
+        dfA['Bfield'] = 1/Ma._B
+        fi ='1/B(1/Tesla)'
     return {
         'data': [dict(
                 x=dfA['Bfield'],
@@ -190,7 +194,7 @@ def update_graph(nel,gam, Xi, GLo, cal, bsp, bfs):
             }
         ) for i in ca ],
         'layout': dict(
-            xaxis={'title': 'field'},
+            xaxis={'title': fi},
             yaxis={'title': 'DOS'},
             margin={'l': 100, 'b': 40, 't': 10, 'r': 0},
             hovermode='closest')
@@ -218,8 +222,10 @@ def update_graph2(cal,  bfs, val):
             co.append('OmegaC')
         if bfs == 'Bf':
             dfA['Bfield'] = Ma._B
+            fi ='B(Tesla)'
         else:
             dfA['Bfield'] = 1/Ma._B
+            fi ='1/B(1/Tesla)'
     return {
         'data': [dict(
             x=dfA['Bfield'],
@@ -232,7 +238,12 @@ def update_graph2(cal,  bfs, val):
                 'opacity': 0.5,
                 'line': {'width': 0.5, 'color': 'white'}
             }
-        )for i in co ]
+        )for i in co ],
+        'layout': dict(
+            xaxis={'title': fi},
+            yaxis={'title': 'Grand Thermodynamic Potential'},
+            margin={'l': 100, 'b': 40, 't': 10, 'r': 0},
+            hovermode='closest')
     }
 
 
@@ -255,8 +266,10 @@ def update_graph3(cal,  bfs, val2):
             cm.append('MagnetizationC')
         if bfs == 'Bf':
             dfA['Bfield'] = Ma._B
+            fi ='B(Tesla)'
         else:
             dfA['Bfield'] = 1/Ma._B
+            fi ='1/B(1/Tesla)'
     return {
         'data': [dict(
               x=dfA['Bfield'],
@@ -269,15 +282,20 @@ def update_graph3(cal,  bfs, val2):
                   'opacity': 0.5,
                   'line': {'width': 0.5, 'color': 'white'}
             }
-        ) for i in cm]
+        ) for i in cm],
+        'layout': dict(
+            xaxis={'title': fi},
+            yaxis={'title': 'Magnetization'},
+            margin={'l': 100, 'b': 40, 't': 10, 'r': 0},
+            hovermode='closest')
     }
 
-@app.callback(
-    Output(component_id='my-div', component_property='children'),
-    [Input(component_id='GL', component_property='value')]
-)
-def update_output_div(input_value):
-    return 'You\'ve entered "{}"'.format(input_value)
+# @app.callback(
+#     Output(component_id='my-div', component_property='children'),
+#     [Input(component_id='GL', component_property='value')]
+# )
+# def update_output_div(input_value):
+#     return 'value "{}"'.format(input_value)
 
 
 if __name__ == '__main__':
