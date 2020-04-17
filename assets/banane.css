@@ -1,0 +1,33 @@
+
+button {
+    padding: 5px;
+    border-width: 1px;
+    border-color: red;
+    border-radius: 5px;
+    border-style: solid;
+    background-color: blue;
+}
+
+button:hover {
+    background-color: green;
+
+}
+
+.grid-x div {
+    border-width: 1px;
+    border-color: red;
+    border-radius: 5px;
+    border-style: solid;
+}
+
+#calc label{
+    color: blue;
+}
+
+.checklist label{
+    color: red;
+}
+
+.orange label{
+    font-weigth: 700;
+}
