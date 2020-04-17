@@ -263,6 +263,7 @@ def update_graph(nel, gam, Xi, GLo, cal, bsp, bfs):
         ca.append("DOSA")
     if isin("nu", cal):
         g = Mc.gESS(ns=nel, Gam=gam * k.k, Xi=float(Xi), GL=int(GLo), Bs=float(bsp))
+        print(Xi)
         dfA["DOSC"] = g[shape(g)[0] // 2]
         ca.append("DOSC")
     if bfs == "Bf":

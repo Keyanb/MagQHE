@@ -167,7 +167,8 @@ class MagneT(object):
             self._B = B
         if Gam:
             self._Gam = Gam
-        if Xi:
+        if isinstance(Xi, (np.ndarray, float, int)):
+        # if Xi:
             self._Xi = Xi
         if ns:
             self._ns = ns
@@ -177,7 +178,6 @@ class MagneT(object):
         E = self._ns * pi * k.hbar ** 2 / self._m
         Bp = self._B * cos(alpha)
         Bt = self._B
-        mub = k.e * k.hbar / (2 * self._m)
         hwc = k.hbar * k.e * Bp / self._m  # M elements
         al = self._m / (pi * k.hbar ** 2)
         l = sqrt(k.hbar / (k.e * Bp))
@@ -188,12 +188,18 @@ class MagneT(object):
             s[i] = arange(nis)
         s = transpose(s)
         if GL == 1:
+             # self._dos = self._Xi * self._m / (pi * k.hbar ** 2) + (
+             #        1 - self._Xi )  * ( (2*k.e/k.h)* 1
+             #              / (sqrt(2 * pi) * self._Gam)* sum((-1) ** s
+             #             * exp(-2 * (s * pi * Gam) ** 2 / hwc ** 2)
+             #    * cos(2 * s * pi * E / hwc), axis=0,))
             self._dos = al * self._Xi + 2 * (1 - self._Xi) * al * sum(
                 (-1) ** s
                 * exp(-2 * (s * pi * Gam) ** 2 / hwc ** 2)
                 * cos(2 * s * pi * E / hwc),
                 axis=0,
             )
+            print(self._Xi)
         else:
             self._dos = al * (
                 self._Xi
@@ -473,8 +479,8 @@ class MagneT(object):
                         bet[n, p] = 0
         if isinstance(self._dos, (np.ndarray, float, int)):
             Z = self._dos * bet
-        elif self._Bs == 0:
-            Z = self.gEgaussian(E=E) * bet
+        # elif self._Bs == 0:
+        #     Z = self.gEgaussian(E=E) * bet
         else:
             Z = self.gESS(E=E, alpha=alpha) * bet
         S = sum(Z, axis=0)
