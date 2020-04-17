@@ -399,7 +399,7 @@ def update_graph3(cal, bfs, n_click, fig):
             ],
             "layout": dict(
                 xaxis={"title": fi},
-                yaxis={"title": r"$d, r \text{ (solar radius)}$"},
+                yaxis={"title": r"Magnetisation"},
             ),
         })
 
