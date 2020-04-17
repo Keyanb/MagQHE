@@ -137,34 +137,6 @@ app.layout = html.Div(
                 html.Div(
                     className="cell small-12 medium-6",
                     children=[
-                        html.Label(r"Disorder type"),
-                        dcc.Dropdown(
-                            id="GL",
-                            options=[
-                                {"label": "Gaussian", "value": "1"},
-                                {"label": u"Lorentzian", "value": "0"},
-                            ],
-                            value="0",
-                        ),
-                    ],
-                ),
-                html.Div(
-                    className="cell small-12 medium-6",
-                    children=[
-                        html.Label(r"x axis:"),
-                        dcc.RadioItems(
-                            id="Bfstyle",
-                            options=[
-                                {"label": "Magnetic field  ", "value": "Bf"},
-                                {"label": u"inverse magnetic field", "value": "B1f"},
-                            ],
-                            value="Bf",
-                        ),
-                    ],
-                ),
-                html.Div(
-                    className="cell small-12 medium-6",
-                    children=[
                         html.Label(
                             r"Energy broadening of Landau levels by disorder in Kelvin"
                         ),
@@ -192,6 +164,46 @@ app.layout = html.Div(
                         ),
                     ],
                 ),
+                html.Div(
+                    className="cell small-12 medium-6",
+                    children=[
+                        html.Label(r"Disorder type"),
+                        dcc.Dropdown(
+                            id="GL",
+                            options=[
+                                {"label": "Gaussian", "value": "1"},
+                                {"label": u"Lorentzian", "value": "0"},
+                            ],
+                            value="0",
+                        ),
+                    ],
+                ),
+                html.Div(
+                    className="cell small-12 medium-6",
+                    children=[
+                        html.Label(r"x axis:"),
+                        dcc.RadioItems(
+                            id="Bfstyle",
+                            options=[
+                                {"label": "Magnetic field  ", "value": "Bf"},
+                                {"label": u"inverse magnetic field", "value": "B1f"},
+                            ],
+                            value="Bf",
+                        ),
+                    ],
+                ),
+                
+                html.Div(
+                    className="cell small-12 medium-6",
+                    children=[
+                        html.Label(
+                            r"At what magnetic field (Tesla) do you see spin splitting? (to compute de exange enhencement of Zeeman splitting)"
+                            ),
+                        dcc.Input(id="Bsplit", value=0,),
+                        
+            ]
+                        ),
+                
             ],
         ),
         # html.Div([
@@ -200,28 +212,16 @@ app.layout = html.Div(
         #         id='density-graph') ]),
         #     html.H1('Progress bar'),
         # dbc.Progress(id="progress", value=50, striped=True, animated=True)]),
+        
         html.Div(
             [
-                html.Label(
-                    r"At what magnetic field do you see spin splitting? (to compute de exange enhencement of Zeeman splitting)"
-                ),
-                dcc.Input(id="Bsplit", value=0,),
-                html.Label(r"Tesla"),
-            ]
-        ),
-        html.Div(
-            [
-                dcc.Checklist(
+                html.Button(
                     id="gocal",
                     className="checklist",
-                    options=[
-                        {
-                            "label": "Start thermodynamic grand potential calculation ",
-                            "value": "Go",
-                        }
-                    ],
-                    value=[],
-                )
+                    children="Start thermodynamic grand potential calculation "
+                    
+                   
+                    )
             ]
         ),
         html.Div(
@@ -415,4 +415,4 @@ def update_graph3(cal, bfs, n_click, fig):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server(debug=False)

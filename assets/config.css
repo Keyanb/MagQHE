@@ -1,11 +1,7 @@
 
 button {
     padding: 5px;
-    border-width: 1px;
-    border-color: red;
-    border-radius: 5px;
-    border-style: solid;
-    background-color: blue;
+    background-color: LemonChiffon;
 }
 
 button:hover {
@@ -13,11 +9,15 @@ button:hover {
 
 }
 
-.grid-x div {
+H1 {
+	center
+}
+.grid-x  {
     border-width: 1px;
-    border-color: red;
-    border-radius: 5px;
+    border-color: blue;
+    border-radius: 1px;
     border-style: solid;
+	background-color: AliceBlue;
 }
 
 #calc label{
