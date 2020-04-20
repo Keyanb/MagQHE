@@ -14,17 +14,55 @@ button:hover {
 }
 .grid-x  {
     border-width: 1px;
-    border-color: blue;
-    border-radius: 1px;
-    border-style: solid;
+	margin-top: 10px;
+	margin-bottom: 10px;
+	margin-left: 20px;
+	margin-right: 20px;
+    border-radius: 4px;
+	box-shadow: 5px 10px #888888;
+	padding: 20px;
+	border: 1px solid #bbb;
+	cursor: pointer;
+	box-sizing: border-box;
 	background-color: AliceBlue;
 }
-#choosCalc label{
-    color: blue;
+
+.graph  {
+    border-width: 1px;
+	margin-top: 20px;
+	margin-bottom: 10px;
+	margin-left: 20px;
+	margin-right: 20px;
+    border-radius: 4px;
+	box-shadow: 5px 10px #888888;
+	padding: 20px;
+	border: 1px solid #bbb;
+	cursor: pointer;
+	box-sizing: border-box;
+	background-color: MintCream;
+}
+
+#TextBox {
+	color: blue;
+}
+#choosCalc {
+    color: black;
+	box-sizing: content-box; 
+	margin-top: 10px;
+	margin-bottom: 10px;
+	margin-left: 20px;
+	margin-right: 20px;
+	border-radius: 4px;
+	box-shadow: 5px 10px #888888;
+	padding: 20px;
+	border: 1px solid #bbb;
+	cursor: pointer;
+	box-sizing: border-box;
+	background-color: AliceBlue;
 }
 
 #calc label{
-    color: blue;
+    color: black;
 }
 
 .checklist label{

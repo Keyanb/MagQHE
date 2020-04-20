@@ -91,7 +91,7 @@ app.layout = html.Div(
     id = 'intro',
     children=[
         html.H1(children="Magnetization in Quantum Hall regime"),
-        dcc.Markdown(
+        html.H5(
             children="""
         App to calculate the magnetization in Quantum Hall regime
     """
@@ -101,9 +101,10 @@ app.layout = html.Div(
         html.Div(
             id = 'choosCalc',
             children=[
-            html.Label(
-                r"Choose the type of calcluation you want. Note that anlytical calculation are only for"
-                " the spin degenerate case. Numerical calculation can take few second."
+            html.P(
+                r"Choose the type of calcluation you want. Note that analytical calculation are only for"
+                " the spin degenerate case. Numerical calculation can take few second.",
+                id = 'TexBox',
                 ),
             dcc.Checklist(            
                 # className="checklist orange",
@@ -115,7 +116,10 @@ app.layout = html.Div(
                 value=["an"],
                 ),]
             ),
-        html.Div([dcc.Graph(id="vardens-graph")]),
+        html.Div(
+            className = "graph",
+            children = [
+                dcc.Graph(id="vardens-graph")]),
         html.Div(
             className="grid-x",
             children=[
@@ -215,19 +219,27 @@ app.layout = html.Div(
         ),
        
         
+        # html.Div(
+        #     [
+        #         html.Button(
+        #             id="gocal",
+        #             className="checklist",
+        #             children="Start thermodynamic grand potential calculation "
+                    
+                   
+        #             )
+        #     ]
+        # ),
         html.Div(
-            [
-                html.Button(
+            className='graph',
+            children = [
+                 html.Button(
                     id="gocal",
                     className="checklist",
                     children="Start thermodynamic grand potential calculation "
                     
                    
-                    )
-            ]
-        ),
-        html.Div(
-            [
+                    ),
                 dcc.Graph(id="GranPot-graph", figure=go.Figure(data=[], layout=figure_layout)),
                 # dcc.Graph(
                 #     id = 'Granpot-graphC'),
