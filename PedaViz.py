@@ -277,7 +277,7 @@ def update_graph(nel, gam, Xi, GLo, cal, bsp, bfs):
             dict(
                 x=dfA["Bfield"],
                 y=dfA[i],
-                # text=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
+                text= i,
                 # customdata=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
                 # mode='markers',
                 marker={
@@ -285,12 +285,14 @@ def update_graph(nel, gam, Xi, GLo, cal, bsp, bfs):
                     "opacity": 0.5,
                     "line": {"width": 0.5, "color": "white"},
                 },
+                name=i
             )
             for i in ca
         ],
         "layout": dict(
             xaxis={"title": fi},
             yaxis={"title": "DOS"},
+            
         ),
     }
 
@@ -313,6 +315,7 @@ def update_graph2(cal, bfs, n_click):
             co.append("OmegaA")
         if isin("nu", cal):
             OmC = Mc.OmegaC()
+            print(Mc._GL)
             dfA["OmegaC"] = OmC
             co.append("OmegaC")
         if bfs == "Bf":
@@ -328,7 +331,7 @@ def update_graph2(cal, bfs, n_click):
             dict(
                 x=dfA["Bfield"],
                 y=dfA[i],
-                # text=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
+                text = 'bou',
                 # customdata=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
                 # mode='markers',
                 marker={
@@ -336,6 +339,7 @@ def update_graph2(cal, bfs, n_click):
                     "opacity": 0.5,
                     "line": {"width": 0.5, "color": "white"},
                 },
+                name=i
             )
             for i in co
         ],
@@ -395,6 +399,7 @@ def update_graph3(cal, bfs, n_click, fig):
                         "opacity": 0.5,
                         "line": {"width": 0.5, "color": "white"},
                     },
+                    name=i
                 )
                 for i in cm
             ],

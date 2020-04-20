@@ -172,8 +172,9 @@ class MagneT(object):
             self._Xi = Xi
         if ns:
             self._ns = ns
-        if GL:
+        if isinstance(GL, (float, int)):
             self._GL = GL
+            
 
         E = self._ns * pi * k.hbar ** 2 / self._m
         Bp = self._B * cos(alpha)
@@ -199,7 +200,7 @@ class MagneT(object):
                 * cos(2 * s * pi * E / hwc),
                 axis=0,
             )
-            print(self._Xi)
+            
         else:
             self._dos = al * (
                 self._Xi
@@ -245,11 +246,11 @@ class MagneT(object):
             self._Gam = Gam
         if Nmax:
             self._N = Nmax
-        if Xi:
+        if isinstance(Xi, (float, int)):
             self._Xi = Xi
         if ns:
             self._ns = ns
-        if GL:
+        if isinstance(GL, (float, int)):
             self._GL = GL
         if nE:
             self._nE = nE
@@ -351,7 +352,7 @@ class MagneT(object):
             self._T = T
         if Nmax:
             self._N = Nmax
-        if Xi:
+        if isinstance(Xi, (float, int)):
             self._Xi = Xi
         integ_result = empty_like(B)
         integrand = lambda E: self.Dbe(gE=gE) * self.fermi_weight()
@@ -373,9 +374,9 @@ class MagneT(object):
             self._T = T
         if Nmax:
             self._N = Nmax
-        if Xi:
+        if isinstance(Xi, (float, int)):
             self._Xi = Xi
-        if GL:
+        if isinstance(GL, (float, int)):
             self._GL = GL
         self._mu = self._ns * pi * k.hbar ** 2 / self._m
         wc = k.e * self._B / self._m
@@ -442,7 +443,7 @@ class MagneT(object):
         """
         if B:
             self._B = B
-        if Bs:
+        if isinstance(Bs, (float, int)):
             self._Bs = Bs
         if mu:
             self._mu = mu
@@ -452,9 +453,9 @@ class MagneT(object):
             self._T = T
         if Nmax:
             self._N = Nmax
-        if Xi:
+        if isinstance(Xi, (float, int)):
             self._Xi = Xi
-        if GL:
+        if isinstance(GL, (float, int)):
             self._GL = GL
         if nE:
             self._nE = nE
@@ -519,7 +520,7 @@ class MagneT(object):
             self._ns = ns
         if p:
             self._p = p
-        if GL:
+        if isinstance(GL, (float, int)):
             self._GL = GL
         if self._s_default:
             self._s_default = s
@@ -545,7 +546,7 @@ class MagneT(object):
                 * (hwc / (2 * n) + pi ** 2 * k.k * self._T * 1 / tanh(skt))
             )
         )
-        if GL == 1:
+        if self._GL == 1:
             self._Mag = (
                 -2
                 * self._m
