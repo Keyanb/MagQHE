@@ -9,8 +9,8 @@ button:hover {
 
 }
 
-H1 {
-	center
+#intro {
+	text-align: center
 }
 .grid-x  {
     border-width: 1px;
@@ -19,15 +19,22 @@ H1 {
     border-style: solid;
 	background-color: AliceBlue;
 }
+#choosCalc label{
+    color: blue;
+}
 
 #calc label{
     color: blue;
 }
 
 .checklist label{
-    color: red;
+    color: blue;
 }
 
 .orange label{
     font-weigth: 700;
+}
+
+p {
+    font: 1rem 'Fira Sans', sans-serif;
 }

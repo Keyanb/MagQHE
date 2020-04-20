@@ -88,29 +88,33 @@ app.index_string = '''
 available_indicators = ["Grand potential", "Magnetization"]
 
 app.layout = html.Div(
+    id = 'intro',
     children=[
         html.H1(children="Magnetization in Quantum Hall regime"),
-        html.Div(
+        dcc.Markdown(
             children="""
-        App to calculate magnetization in Quantum Hall regime
+        App to calculate the magnetization in Quantum Hall regime
     """
         ),
-        html.Label(
-            r"The source code of the app and function to perform calculation is available on Git: https://github.com/Keyanb/MagQHE"
-        ),
-        html.Label(
-            r"Choose the type of calcluation you want. Note that anlytical calculation are only for"
-            "the spin degenerate case. Numerical calculation can take few second. Both can be selected"
-        ),
-        dcc.Checklist(
-            id="calc",
-            className="checklist orange",
-            options=[
-                {"label": "Analytical calculation  ", "value": "an"},
-                {"label": "Numerical calculation", "value": "nu"},
-            ],
-            value=["an"],
-        ),
+        
+        
+        html.Div(
+            id = 'choosCalc',
+            children=[
+            html.Label(
+                r"Choose the type of calcluation you want. Note that anlytical calculation are only for"
+                " the spin degenerate case. Numerical calculation can take few second."
+                ),
+            dcc.Checklist(            
+                # className="checklist orange",
+                id = 'calc',
+                options=[
+                    {"label": "Analytical calculation  ", "value": "an"},
+                    {"label": "Numerical calculation", "value": "nu"},
+                    ],
+                value=["an"],
+                ),]
+            ),
         html.Div([dcc.Graph(id="vardens-graph")]),
         html.Div(
             className="grid-x",
@@ -118,9 +122,11 @@ app.layout = html.Div(
                 html.Div(
                     className="cell small-12 medium-6",
                     children=[
-                        html.Label(
-                            r"Chose the electron density of your 2DEG in $m^{-2}$:"
-                        ),
+                        dcc.Markdown(
+                            dangerously_allow_html=True,
+                            children=dedent(
+                                "Chose the electron density of your 2DEG in m<sup>-2</sup>:"
+                                )),
                         dcc.Slider(
                             id="nelec",
                             min=0,
@@ -137,15 +143,15 @@ app.layout = html.Div(
                 html.Div(
                     className="cell small-12 medium-6",
                     children=[
-                        html.Label(
+                        dcc.Markdown(
                             r"Energy broadening of Landau levels by disorder in Kelvin"
                         ),
                         dcc.Slider(
                             id="gamma",
                             min=0.5,
-                            max=40,
+                            max=30,
                             value=5,
-                            marks={i: "{}".format(i) for i in range(0, 50, 5)},
+                            marks={i: "{}".format(i) for i in range(0, 31, 5)},
                             step=1 / 10,
                         ),
                     ],
@@ -153,7 +159,7 @@ app.layout = html.Div(
                 html.Div(
                     className="cell small-12 medium-6",
                     children=[
-                        html.Label(r"Constant density broadening %"),
+                        dcc.Markdown(r"Constant density broadening %"),
                         dcc.Slider(
                             id="Xi",
                             min=0,
@@ -167,7 +173,7 @@ app.layout = html.Div(
                 html.Div(
                     className="cell small-12 medium-6",
                     children=[
-                        html.Label(r"Disorder type"),
+                        dcc.Markdown(r"Disorder type"),
                         dcc.Dropdown(
                             id="GL",
                             options=[
@@ -181,7 +187,7 @@ app.layout = html.Div(
                 html.Div(
                     className="cell small-12 medium-6",
                     children=[
-                        html.Label(r"x axis:"),
+                        dcc.Markdown(r"Choose the x axis:"),
                         dcc.RadioItems(
                             id="Bfstyle",
                             options=[
@@ -197,7 +203,8 @@ app.layout = html.Div(
                     className="cell small-12 medium-6",
                     children=[
                         html.Label(
-                            r"At what magnetic field (Tesla) do you see spin splitting? (to compute de exange enhencement of Zeeman splitting)"
+                            r"At what magnetic field (Tesla) do you see spin splitting? This is for"
+                                " computing the exchange term of Zeeman splitting. (works only with numerical calculation)"
                             ),
                         dcc.Input(id="Bsplit", value=0,),
                         
@@ -206,12 +213,7 @@ app.layout = html.Div(
                 
             ],
         ),
-        # html.Div([
-        #     html.Label(r'Density of state calculated numerically (allow spin splitting'),
-        #     dcc.Graph(
-        #         id='density-graph') ]),
-        #     html.H1('Progress bar'),
-        # dbc.Progress(id="progress", value=50, striped=True, animated=True)]),
+       
         
         html.Div(
             [
@@ -226,7 +228,7 @@ app.layout = html.Div(
         ),
         html.Div(
             [
-                dcc.Graph(id="GranPot-graph"),
+                dcc.Graph(id="GranPot-graph", figure=go.Figure(data=[], layout=figure_layout)),
                 # dcc.Graph(
                 #     id = 'Granpot-graphC'),
                 html.Button(
@@ -236,11 +238,20 @@ app.layout = html.Div(
                 ),
                 dcc.Graph(id="Mag-graph", figure=go.Figure(data=[], layout=figure_layout)),
             ]
-        )
+        ),
         # html.Div([
         #     html.Div(id='my-div') ])
+        html.Div(
+            children = [
+            html.Label(
+            r"The source code of the app and functions to perform calculations are available on Github:"
+            ),
+            dcc.Link('https://github.com/Keyanb/MagQHE',
+                     href = "https://github.com/Keyanb/MagQHE"
+        )])
     ]
 )
+
 
 
 @app.callback(
@@ -303,9 +314,10 @@ def update_graph(nel, gam, Xi, GLo, cal, bsp, bfs):
         dash.dependencies.Input("calc", "value"),
         dash.dependencies.Input("Bfstyle", "value"),
         dash.dependencies.Input("gocal", "n_clicks"),
-    ]
+    ],
+    [dash.dependencies.State("GranPot-graph", "figure")]
 )
-def update_graph2(cal, bfs, n_click):
+def update_graph2(cal, bfs, n_click, fig):
     co = []
     if n_click is not None:
         if isin("an", cal):
@@ -324,16 +336,14 @@ def update_graph2(cal, bfs, n_click):
         else:
             dfA["Bfield"] = 1 / Ma._B
             fi = "1/B(1/Tesla)"
-    else:
-        raise PreventUpdate
-    return {
+    # else:
+    #     raise PreventUpdate
+    fig.update({
         "data": [
             dict(
                 x=dfA["Bfield"],
                 y=dfA[i],
-                text = 'bou',
-                # customdata=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
-                # mode='markers',
+                # text = 'bou',
                 marker={
                     "size": 15,
                     "opacity": 0.5,
@@ -348,7 +358,9 @@ def update_graph2(cal, bfs, n_click):
             yaxis={"title": "Grand Thermodynamic Potential"},
             **figure_layout
         ),
-    }
+     })
+
+    return fig
 
 
 @app.callback(
@@ -362,11 +374,9 @@ def update_graph2(cal, bfs, n_click):
 )
 def update_graph3(cal, bfs, n_click, fig):
     ctx = dash.callback_context
-    if ctx.triggered:
-        prop_id = ctx.triggered[0]['prop_id']
-        print(prop_id)
-
-
+    # if ctx.triggered:
+    #     prop_id = ctx.triggered[0]['prop_id']
+    #     print(prop_id)
 
     cm = []
     if n_click is not None:
@@ -391,9 +401,6 @@ def update_graph3(cal, bfs, n_click, fig):
                 dict(
                     x=dfA["Bfield"],
                     y=dfA[i],
-                    # text=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
-                    # customdata=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
-                    # mode='markers',
                     marker={
                         "size": 15,
                         "opacity": 0.5,
