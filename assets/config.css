@@ -10,16 +10,18 @@ button:hover {
 }
 
 #intro {
-	text-align: center
+	margin-top: 50px;
+	text-align: center;
+	margin-bottom: 50px;
 }
 .grid-x  {
     border-width: 1px;
-	margin-top: 10px;
+	margin-top: 20px;
 	margin-bottom: 10px;
 	margin-left: 20px;
 	margin-right: 20px;
     border-radius: 4px;
-	box-shadow: 5px 10px #888888;
+	box-shadow: 3px 4px #cdcdcd;
 	padding: 20px;
 	border: 1px solid #bbb;
 	cursor: pointer;
@@ -34,12 +36,12 @@ button:hover {
 	margin-left: 20px;
 	margin-right: 20px;
     border-radius: 4px;
-	box-shadow: 5px 10px #888888;
+	box-shadow: 3px 4px #cdcdcd;
 	padding: 20px;
 	border: 1px solid #bbb;
 	cursor: pointer;
 	box-sizing: border-box;
-	background-color: MintCream;
+	background-color: transparent;
 }
 
 #TextBox {
@@ -48,12 +50,12 @@ button:hover {
 #choosCalc {
     color: black;
 	box-sizing: content-box; 
-	margin-top: 10px;
+	margin-top: 20px;
 	margin-bottom: 10px;
 	margin-left: 20px;
 	margin-right: 20px;
 	border-radius: 4px;
-	box-shadow: 5px 10px #888888;
+	box-shadow: 3px 4px #cdcdcd;
 	padding: 20px;
 	border: 1px solid #bbb;
 	cursor: pointer;

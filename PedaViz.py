@@ -85,7 +85,7 @@ app.index_string = '''
 '''
 
 
-available_indicators = ["Grand potential", "Magnetization"]
+available_indicators = ["Analytical", "Numerical"]
 
 app.layout = html.Div(
     id = 'intro',
@@ -137,7 +137,7 @@ app.layout = html.Div(
                             max=1e16,
                             marks={
                                 i: "{:.1E}".format(i)
-                                for i in range(0, int(1e16), int(1e15))
+                                for i in range(0, int(1.1e16), int(2e15))
                             },
                             value=3e15,
                             step=1e14,
@@ -167,10 +167,10 @@ app.layout = html.Div(
                         dcc.Slider(
                             id="Xi",
                             min=0,
-                            max=1,
-                            value=0.1,
-                            marks={i: "{:.2E}".format(i) for i in range(0, 100, 10)},
-                            step=1 / 50,
+                            max=100,
+                            value=10,
+                            marks={i: "{}".format(i) for i in range(0, 101, 20)},
+                            step=1 ,
                         ),
                     ],
                 ),
@@ -279,13 +279,14 @@ app.layout = html.Div(
     ],
 )
 def update_graph(nel, gam, Xi, GLo, cal, bsp, bfs):
-    gEA = Ma.gEA(ns=nel, Gam=gam * k.k, Xi=float(Xi), GL=int(GLo))
+    gEA = Ma.gEA(ns=nel, Gam=gam * k.k, Xi=float(Xi)/100, GL=int(GLo))
     dfA["DOSA"] = gEA
     ca = []
+    na = {"DOSA": "Analytical", "DOSC": "Numerical" }
     if isin("an", cal):
-        ca.append("DOSA")
+        ca.append("DOSA")        
     if isin("nu", cal):
-        g = Mc.gESS(ns=nel, Gam=gam * k.k, Xi=float(Xi), GL=int(GLo), Bs=float(bsp))
+        g = Mc.gESS(ns=nel, Gam=gam * k.k, Xi=float(Xi)/100, GL=int(GLo), Bs=float(bsp))
         print(Xi)
         dfA["DOSC"] = g[shape(g)[0] // 2]
         ca.append("DOSC")
@@ -308,7 +309,7 @@ def update_graph(nel, gam, Xi, GLo, cal, bsp, bfs):
                     "opacity": 0.5,
                     "line": {"width": 0.5, "color": "white"},
                 },
-                name=i
+                name=na[i]
             )
             for i in ca
         ],
@@ -331,6 +332,7 @@ def update_graph(nel, gam, Xi, GLo, cal, bsp, bfs):
 )
 def update_graph2(cal, bfs, n_click, fig):
     co = []
+    na = {"OmegaA": "Analytical", "OmegaC": "Numerical" }
     if n_click is not None:
         if isin("an", cal):
             OmA = Ma.OmegaA()
@@ -361,7 +363,7 @@ def update_graph2(cal, bfs, n_click, fig):
                     "opacity": 0.5,
                     "line": {"width": 0.5, "color": "white"},
                 },
-                name=i
+                name=na[i]
             )
             for i in co
         ],
@@ -391,6 +393,7 @@ def update_graph3(cal, bfs, n_click, fig):
     #     print(prop_id)
 
     cm = []
+    na = {"MagnetizationA": "Analytical", "MagnetizationC": "Numerical" }
     if n_click is not None:
         if isin("an", cal):
             MagA = Ma.MagA()
@@ -418,7 +421,7 @@ def update_graph3(cal, bfs, n_click, fig):
                         "opacity": 0.5,
                         "line": {"width": 0.5, "color": "white"},
                     },
-                    name=i
+                    name=na[i]
                 )
                 for i in cm
             ],
