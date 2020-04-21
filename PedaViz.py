@@ -281,6 +281,7 @@ app.layout = html.Div(
 def update_graph(nel, gam, Xi, GLo, cal, bsp, bfs):
     gEA = Ma.gEA(ns=nel, Gam=gam * k.k, Xi=float(Xi)/100, GL=int(GLo))
     dfA["DOSA"] = gEA
+    fi = []
     ca = []
     na = {"DOSA": "Analytical", "DOSC": "Numerical" }
     if isin("an", cal):
@@ -331,6 +332,7 @@ def update_graph(nel, gam, Xi, GLo, cal, bsp, bfs):
 )
 def update_graph2(cal, bfs, n_click, fig):
     co = []
+    fi = []
     na = {"OmegaA": "Analytical", "OmegaC": "Numerical" }
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     
@@ -442,4 +444,4 @@ def update_graph3(cal, bfs, n_click, fig):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=False)
+    app.run_server(debug=True)
