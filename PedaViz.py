@@ -287,7 +287,6 @@ def update_graph(nel, gam, Xi, GLo, cal, bsp, bfs):
         ca.append("DOSA")        
     if isin("nu", cal):
         g = Mc.gESS(ns=nel, Gam=gam * k.k, Xi=float(Xi)/100, GL=int(GLo), Bs=float(bsp))
-        print(Xi)
         dfA["DOSC"] = g[shape(g)[0] // 2]
         ca.append("DOSC")
     if bfs == "Bf":
@@ -333,15 +332,16 @@ def update_graph(nel, gam, Xi, GLo, cal, bsp, bfs):
 def update_graph2(cal, bfs, n_click, fig):
     co = []
     na = {"OmegaA": "Analytical", "OmegaC": "Numerical" }
-    if n_click is not None:
+    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    
+    if changed_id == "gocal.n_clicks":
+        
         if isin("an", cal):
             OmA = Ma.OmegaA()
-            # dfA = pd.DataFrame({'OmegaA': OmA})
             dfA["OmegaA"] = OmA
             co.append("OmegaA")
         if isin("nu", cal):
             OmC = Mc.OmegaC()
-            print(Mc._GL)
             dfA["OmegaC"] = OmC
             co.append("OmegaC")
         if bfs == "Bf":
@@ -350,8 +350,8 @@ def update_graph2(cal, bfs, n_click, fig):
         else:
             dfA["Bfield"] = 1 / Ma._B
             fi = "1/B(1/Tesla)"
-    # else:
-    #     raise PreventUpdate
+    else:
+        raise PreventUpdate
     fig.update({
         "data": [
             dict(
@@ -387,14 +387,11 @@ def update_graph2(cal, bfs, n_click, fig):
     [dash.dependencies.State("Mag-graph", "figure")]
 )
 def update_graph3(cal, bfs, n_click, fig):
-    ctx = dash.callback_context
-    # if ctx.triggered:
-    #     prop_id = ctx.triggered[0]['prop_id']
-    #     print(prop_id)
-
+    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     cm = []
     na = {"MagnetizationA": "Analytical", "MagnetizationC": "Numerical" }
-    if n_click is not None:
+    
+    if changed_id == "gocal2.n_clicks":
         if isin("an", cal):
             MagA = Ma.MagA()
             dfA["MagnetizationA"] = MagA
@@ -410,9 +407,11 @@ def update_graph3(cal, bfs, n_click, fig):
         else:
             dfA["Bfield"] = 1 / Ma._B
             fi = "1/B(1/Tesla)"
+    else:
+        raise PreventUpdate
 
-        fig.update({
-            "data": [
+    fig.update({
+           "data": [
                 dict(
                     x=dfA["Bfield"],
                     y=dfA[i],
@@ -430,7 +429,7 @@ def update_graph3(cal, bfs, n_click, fig):
                 yaxis={"title": r"Magnetisation"},
             ),
         })
-
+    
     return fig
 
 
