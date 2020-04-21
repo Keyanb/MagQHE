@@ -186,33 +186,23 @@ class MagneT(object):
 
         s = zeros((shape(self._B)[0], nis))
         for i in range(shape(self._B)[0]):
-            s[i] = arange(nis)
+            s[i] = arange(1,nis+1)
         s = transpose(s)
         if GL == 1:
-             # self._dos = self._Xi * self._m / (pi * k.hbar ** 2) + (
-             #        1 - self._Xi )  * ( (2*k.e/k.h)* 1
-             #              / (sqrt(2 * pi) * self._Gam)* sum((-1) ** s
-             #             * exp(-2 * (s * pi * Gam) ** 2 / hwc ** 2)
-             #    * cos(2 * s * pi * E / hwc), axis=0,))
-            self._dos = al * self._Xi + 2 * (1 - self._Xi) * al * sum(
+            self._dos = al*(1+2*(1-self._Xi)* sum(
                 (-1) ** s
                 * exp(-2 * (s * pi * Gam) ** 2 / hwc ** 2)
                 * cos(2 * s * pi * E / hwc),
-                axis=0,
-            )
-            
+                axis=0,)
+            ) 
+          
         else:
-            self._dos = al * (
-                self._Xi
-                + 2
-                * (1 - self._Xi)
-                * sum(
-                    (-1) ** s
-                    * exp(-2 * (s * pi * Gam) / hwc)
-                    * cos(2 * s * pi * E / hwc),
-                    axis=0,
-                )
-            )
+            self._dos = al*(1+2*(1-self._Xi)* sum(
+                (-1) ** s
+                * exp(-2 * (s * pi * Gam) / hwc)
+                * cos(2 * s * pi * E / hwc),
+                axis=0,)
+            ) 
         return self._dos
 
     def gESS(
