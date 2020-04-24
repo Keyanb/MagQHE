@@ -470,9 +470,6 @@ class MagneT(object):
                         bet[n, p] = 0
         if isinstance(self._dos, (np.ndarray, float, int)):
             Z = self._dos * bet
-            # print('Z')
-        # elif self._Bs == 0:
-        #     Z = self.gEgaussian(E=E) * bet
         else:
             Z = self.gESS(E=E, alpha=alpha) * bet
         S = sum(Z, axis=0)

@@ -47,6 +47,8 @@ app = dash.Dash(
 server = app.server
 
 
+app.config.suppress_callback_exceptions=True
+
 figure_layout = dict(
 
     margin={"l": 100, "b": 40, "t": 10, "r": 0},
@@ -119,6 +121,7 @@ app.layout = html.Div(
         html.Div(
             className = "graph",
             children = [
+                html.H4('Density of states'),
                 dcc.Graph(id="vardens-graph")]),
         html.Div(
             className="grid-x",
@@ -217,42 +220,27 @@ app.layout = html.Div(
                 
             ],
         ),
-       
         
-        # html.Div(
-        #     [
-        #         html.Button(
-        #             id="gocal",
-        #             className="checklist",
-        #             children="Start thermodynamic grand potential calculation "
-                    
-                   
-        #             )
-        #     ]
-        # ),
+       
         html.Div(
             className='graph',
             children = [
                  html.Button(
                     id="gocal",
                     className="checklist",
-                    children="Start thermodynamic grand potential calculation "
+                    children="Start thermodynamic grand potential and Magnetization calculation "
                     
                    
                     ),
+                html.H4('Grand thermodynamic potential'),
                 dcc.Graph(id="GranPot-graph", figure=go.Figure(data=[], layout=figure_layout)),
-                # dcc.Graph(
-                #     id = 'Granpot-graphC'),
-                html.Button(
-                    id="gocal2",
-                    className="checklist",
-                    children="Start Magnetization Calculation (only after grand potential has been calculated)"
-                ),
+                html.H4('Magnetization'),
                 dcc.Graph(id="Mag-graph", figure=go.Figure(data=[], layout=figure_layout)),
             ]
         ),
-        # html.Div([
-        #     html.Div(id='my-div') ])
+        
+        
+        
         html.Div(
             children = [
             html.Label(
@@ -267,17 +255,15 @@ app.layout = html.Div(
 
 
 @app.callback(
-    dash.dependencies.Output("vardens-graph", "figure"),
-    [
-        dash.dependencies.Input("nelec", "value"),
-        dash.dependencies.Input("gamma", "value"),
-        dash.dependencies.Input("Xi", "value"),
-        dash.dependencies.Input("GL", "value"),
-        dash.dependencies.Input("calc", "value"),
-        dash.dependencies.Input("Bsplit", "value"),
-        dash.dependencies.Input("Bfstyle", "value"),
-    ],
-)
+    Output("vardens-graph", "figure") 
+    ,[Input("nelec", "value"),
+     Input("gamma", "value"),
+     Input("Xi", "value"),
+     Input("GL", "value"),
+     Input("calc", "value"),
+     Input("Bsplit", "value"),
+     Input("Bfstyle", "value")])
+
 def update_graph(nel, gam, Xi, GLo, cal, bsp, bfs):
     gEA = Ma.gEA(ns=nel, Gam=gam * k.k, Xi=float(Xi)/100, GL=int(GLo))
     dfA["DOSA"] = gEA
@@ -296,14 +282,12 @@ def update_graph(nel, gam, Xi, GLo, cal, bsp, bfs):
     else:
         dfA["Bfield"] = 1 / Ma._B
         fi = "1/B(1/Tesla)"
-    return {
+    figure = {
         "data": [
             dict(
                 x=dfA["Bfield"],
                 y=dfA[i],
-                text= i,
-                # customdata=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
-                # mode='markers',
+                text= na[i],
                 marker={
                     "size": 15,
                     "opacity": 0.5,
@@ -317,49 +301,68 @@ def update_graph(nel, gam, Xi, GLo, cal, bsp, bfs):
             xaxis={"title": fi},
             yaxis={"title": "DOS"},
             
-        ),
+        )
     }
+    
+    return figure
 
 
-@app.callback(
-    dash.dependencies.Output("GranPot-graph", "figure"),
+@app.callback([dash.dependencies.Output("Mag-graph", "figure"),
+    Output("GranPot-graph", "figure")],
     [
-        dash.dependencies.Input("calc", "value"),
-        dash.dependencies.Input("Bfstyle", "value"),
-        dash.dependencies.Input("gocal", "n_clicks"),
+        Input("calc", "value"),
+        Input("Bfstyle", "value"),
+        Input("gocal", "n_clicks"),
+        Input("nelec", "value"),
+        Input("gamma", "value"),
+        Input("Xi", "value"),
+        Input("GL", "value"),
+        Input("Bsplit", "value"),
     ],
-    [dash.dependencies.State("GranPot-graph", "figure")]
+    [dash.dependencies.State("GranPot-graph", "figure"), 
+     dash.dependencies.State("Mag-graph", "figure")]
 )
-def update_graph2(cal, bfs, n_click, fig):
+def update_graph2(cal, bfs, n_click, ne, gam, xi, gl, bs, fig1, fig2):
     co = []
+    cm = []
     fi = []
     na = {"OmegaA": "Analytical", "OmegaC": "Numerical" }
+    na2 = {"MagnetizationA": "Analytical", "MagnetizationC": "Numerical" }
+    # print(g)
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     
     if changed_id == "gocal.n_clicks":
         
         if isin("an", cal):
-            OmA = Ma.OmegaA()
+            OmA = Ma.OmegaA(ns = ne, Gam = gam * k.k, Xi=float(xi)/100, GL=int(gl) )
             dfA["OmegaA"] = OmA
             co.append("OmegaA")
+            MagA = Ma.MagA()
+            dfA["MagnetizationA"] = MagA
+            cm.append("MagnetizationA")
         if isin("nu", cal):
-            OmC = Mc.OmegaC()
+            OmC = Mc.OmegaC(ns = ne, Gam = gam * k.k, Xi=float(xi)/100, GL=int(gl), Bs = bs)
             dfA["OmegaC"] = OmC
             co.append("OmegaC")
+            MagC = Mc.MagC()
+            MagC = np.append(MagC, MagC[-1])
+            dfA["MagnetizationC"] = MagC
+            cm.append("MagnetizationC")
         if bfs == "Bf":
             dfA["Bfield"] = Ma._B
             fi = "B(Tesla)"
         else:
             dfA["Bfield"] = 1 / Ma._B
             fi = "1/B(1/Tesla)"
+         
     else:
         raise PreventUpdate
-    fig.update({
+    fig1.update({
         "data": [
             dict(
                 x=dfA["Bfield"],
                 y=dfA[i],
-                # text = 'bou',
+              
                 marker={
                     "size": 15,
                     "opacity": 0.5,
@@ -375,44 +378,7 @@ def update_graph2(cal, bfs, n_click, fig):
             **figure_layout
         ),
      })
-
-    return fig
-
-
-@app.callback(
-    dash.dependencies.Output("Mag-graph", "figure"),
-    [
-        dash.dependencies.Input("calc", "value"),
-        dash.dependencies.Input("Bfstyle", "value"),
-        dash.dependencies.Input("gocal2", "n_clicks"),
-    ],
-    [dash.dependencies.State("Mag-graph", "figure")]
-)
-def update_graph3(cal, bfs, n_click, fig):
-    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    cm = []
-    na = {"MagnetizationA": "Analytical", "MagnetizationC": "Numerical" }
-    
-    if changed_id == "gocal2.n_clicks":
-        if isin("an", cal):
-            MagA = Ma.MagA()
-            dfA["MagnetizationA"] = MagA
-            cm.append("MagnetizationA")
-        if isin("nu", cal):
-            MagC = Mc.MagC()
-            MagC = np.append(MagC, MagC[-1])
-            dfA["MagnetizationC"] = MagC
-            cm.append("MagnetizationC")
-        if bfs == "Bf":
-            dfA["Bfield"] = Ma._B
-            fi = "B(Tesla)"
-        else:
-            dfA["Bfield"] = 1 / Ma._B
-            fi = "1/B(1/Tesla)"
-    else:
-        raise PreventUpdate
-
-    fig.update({
+    fig2.update({
            "data": [
                 dict(
                     x=dfA["Bfield"],
@@ -422,7 +388,7 @@ def update_graph3(cal, bfs, n_click, fig):
                         "opacity": 0.5,
                         "line": {"width": 0.5, "color": "white"},
                     },
-                    name=na[i]
+                    name=na2[i]
                 )
                 for i in cm
             ],
@@ -431,17 +397,22 @@ def update_graph3(cal, bfs, n_click, fig):
                 yaxis={"title": r"Magnetisation"},
             ),
         })
-    
-    return fig
+
+    return fig2, fig1
+
+
+#
 
 
 # @app.callback(
-#     Output(component_id='my-div', component_property='children'),
-#     [Input(component_id='GL', component_property='value')]
+#     Output('my-div', 'children'),
+#     [Input('denos', 'data')]
 # )
 # def update_output_div(input_value):
+#     print(input_value)
 #     return 'value "{}"'.format(input_value)
 
 
+
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server(debug=False)
