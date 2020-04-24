@@ -232,10 +232,11 @@ app.layout = html.Div(
                     
                    
                     ),
-                html.H4('Grand thermodynamic potential'),
+               
                 dcc.Graph(id="GranPot-graph", figure=go.Figure(data=[], layout=figure_layout)),
-                html.H4('Magnetization'),
+                html.H4('Grand thermodynamic potential'),
                 dcc.Graph(id="Mag-graph", figure=go.Figure(data=[], layout=figure_layout)),
+                html.H4('Magnetization'),
             ]
         ),
         
